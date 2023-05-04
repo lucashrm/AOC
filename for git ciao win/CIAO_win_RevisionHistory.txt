@@ -1,0 +1,699 @@
+FRA: les modifications les plus récentes apparaissent au début du fichier.
+ENG: most recent updates appear at the beginning of this file.
+
+
+2023.04.12 -- Version 085
+=========================
+-DEPENDENCIES: AOC++ rev.41.
+-UPDATED: Winux project updated.
+-TOBEFIXED: mess with timespec definition.
+
+
+2023.04.12 -- Version 084
+=========================
+-DEPENDENCIES: AOC++ rev.37.
+-UPDATED: Winux project updated.
+
+
+2022.10.18 -- Version 083
+=========================
+-DEPENDENCIES: AOC++ rev.36.
+-NEW: Logging capabilities implemented (working but under dev).
+
+
+2022.10.14 -- Version 082
+=========================
+-DEPENDENCIES: AOC++ rev.35.
+-NEW: Zernike offsets dialog that controls the closed-loop centroid reference positions (experimental). New GUI file added "AOC_ZOffsets.ui".
+
+
+2022.10.13 -- Version 081
+=========================
+-DEPENDENCIES: AOC++ rev.34.
+-FIXED: Zalamano doesn't fail to save new coefficient maps anymore (use fits.open(<file>, memmap=False)).
+
+
+2022.10.04 -- Version 080
+=========================
+-DEPENDENCIES: AOC++ rev.34.
+-CHANGED: red bargraphs are now computed by projecting the current *relative* (to static command map) command map onto the calibration commands (accumulation values not used anymore).
+
+
+2022.10.01 -- Version 079
+=========================
+-DEPENDENCIES: AOC++ rev.33.
+-ADDED: camera frame transfer mode can be selected with a combo box (NORMAL | FT).
+
+
+2022.10.01 -- Version 078
+=========================
+-DEPENDENCIES: AOC++ rev.32.
+-UPDATED: tip-tilt accumulation values now reported in red bargraph.
+
+
+2022.09.23 -- Version 077
+=========================
+-DEPENDENCIES: AOC++ rev.31.
+-CHANGED: 'AOC_zernike_alamano.py' program now automatically loads the last saved Zernike coefficients.
+-CHANGED: 'AOC_zernike_alamano.py' -- 'SAVE' button now saves the current coefficients as defaults (loaded at startup).
+-CHANGED: 'AOC_zernike_alamano.py' -- 'LOAD' button now loads the default coefficients as current.
+
+
+2022.09.21 -- Version 076
+=========================
+-DEPENDENCIES: AOC++ rev.31.
+-FIXED: this file.
+
+
+2022.09.21 -- Version 075
+=========================
+-DEPENDENCIES: AOC++ rev.31.
+-FIXED: desaturation of DM for tip-tilt modes with telescope offset repointing implemented.
+-ADDED: 2 new checkboxes for inverting X and Y telescope offset values.
+
+
+2022.09.10 -- Version 074
+=========================
+-DEPENDENCIES: AOC++ rev.30.
+-UPDATED: subaperture selection (pupil window) now has a visual feedback on the WFS camera display (green square).
+
+
+2022.09.09 -- Version 073
+=========================
+-DEPENDENCIES: AOC++ rev.30.
+-FIXED: previous comment DEPENDENCIES.
+-UPDATED: the command matrix is computed using SVD decomposition instead of 'pseudo-inverse'. The matrix is saved at the end of the calibration process as 'R:\RRsvd.fits' (and used by AOC++ to compute the commands).
+
+
+2022.09.08 -- Version 072
+=========================
+-DEPENDENCIES: AOC++ rev.29.
+-MODIFIED: there are two distinct arrays that control the subaperture centroid computation behaviour in the 'AOC++' C++ code. The threshold array can have any value and must be set according to the observing conditions. The 'enabled' array defines whether a centroid must be computed or not. The actual threshold/enabled values are stored in the RAM "R:" drive, while a "default configuration" can be saved ("save as default") and is stored in the "\data\" folder of the code home folder.
+-UDPATED: the GUI for the pupil subaperture definition displays disabled cells as black text on red-background checkboxes. The enabled cells are shown in green. The "Save as default" button stores the two files (threshold and enabled) in the "\data\" folder, and updates the current configuration to 'AOC++'.
+-ADDED: in the pupil definition dialog/selection type combo box, the "All enabled" and "All disabled" options have been added.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+B070.001: default GUI value for loop gain indicates 0.35 while it's much lower => need to update it at startup to have the indicated value.
+
+
+2022.09.07 -- Version 071 (working version)
+=========================
+-DEPENDENCIES: AOC++ rev.29.
+-UPDATED: updated pupil threshold visual tool (under dev). Image 'min' is no longer used for setting the global threshold.
+-UPDATED: MQTT comms tested for telescope tip-tilt desaturation (firewall issue fixed).
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+B070.001: default GUI value for loop gain indicates 0.35 while it's much lower => need to update it at startup to have the indicated value.
+
+
+2022.07.14 -- Version 070
+=========================
+-DEPENDENCIES: AOC++ rev.28.
+-ADDED: (under dev) a new window can be invoked when checking the "Show pupil" checkbox. It will allow to enable/disable some subapertures, as well as setting a per-aperture threshold. NOT CURRENTLY EFFECTIVE.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+B070.001: default GUI value for loop gain indicates 0.35 while it's much lower => need to update it at startup to have the indicated value.
+
+
+2022.07.13 -- Version 070
+=========================
+-DEPENDENCIES: AOC++ rev.27.
+-UPDATED: ZERnike realtime correction now working(!)
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2022.07.13 -- Version 069
+=========================
+-DEPENDENCIES: AOC++ rev.26.
+-UPDATED: ZERnike tip and tilt graphs and (red) bargraphs implemented from map projection on raw recorded modes.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2022.07.13 -- Version 068
+=========================
+-DEPENDENCIES: AOC++ rev.25.
+-UPDATED: Zernike calibration implemented (see AOC++ revisions) => Computes (basic) command matrix (manually tested with Zalamano tool).
+-CHANGED: Dev buttons renamed 'pB_DevButtonA' and 'pB_DevButtonB'.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2022.07.12 -- Version 067
+=========================
+-DEPENDENCIES: AOC++ rev.24.
+-ADDED: added 'Enable DM' checkbox on the GUI that controls the "realtime" DM position update (at close to 1.5kHz) -- default OFF.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2022.07.12 -- Version 066
+=========================
+-DEPENDENCIES: AOC++ rev.23.
+-MODIFIED: 'AOC_zernike_alamano.py' now displays the mode amplitudes with normalized (+/-) decimal values down to 1/1000 resolution.
+-FIXED: sliders no longer suffer "hysteresis" effect on the values (moving forward 10 and going backward 10 sometimes displayed a value with a difference of unity).
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2022.07.12 -- Version 065
+=========================
+-DEPENDENCIES: AOC++ rev.22.
+-ADDED/TEMPORARY: added 2 buttons on the GUI for updating the combined command buffer.
+-CLEANUP: code cleanup to accomodate AOC++ rev.22.
+-NEW: AOC_zernike_alamano.py now works with AOC++ shared memory buffers.
+-UPDATED: AOC_dmview updated to accomodate changes.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2022.07.11 -- Version 064
+=========================
+-DEPENDENCIES: AOC++ rev.20.
+-ADDED: 'Show ref. pos.' checkbox added showing actual reference centroid positions (used to estimate slopes).
+-FIXES: clear/set reference centroid points fixed.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2022.07.11 -- Version 063
+=========================
+-DEPENDENCIES: AOC++ rev.18.
+-MODIFIED: the shared memory buffer 'slope_history.im.shm' now contains 5 data buffers (two for x/y centroid positions, two for x/y slopes, and one for illumination). All these buffers have sizes corresponding to the number of defined sub-apertures (micro-lens array).
+-ADDED: 'Show centroids' checkbox added showing computed centroids from the C++ code directly (shared memory, see above).
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.12.23 -- Version 061
+=========================
+-DEPENDENCIES: AOC++ rev.16.
+-CHANGED: shared memory buffers no longer contain the display buffers (nact_lin_x*nact_lin_y) but instead contain only the nbAct actuator values (in order to reduce cpu operations on the comptuing server).
+-CHANGED: dmview and poker_shm.py changed to AOC_dmview.py and AOC_poker_shm.py, and were updated to include the new shared memory buffer sizes changes (see above).
+-FIXED: the 'AOC_poker_shm.py' now loads the current shared memory content upon startup, and leave them unchanged upon quit.
+-ADDED: 'convert_flat_to_fits.py' code to convert text file format flat map values to fits file (utility).
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.12.23 -- Version 062
+=========================
+-DEPENDENCIES: AOC++ rev.17.
+-MODIFIED: setting the ref positions 'SET REF' is now updated on the fly.
+-ADDED: live spot positions in overlay (need to fix the grid display).
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.12.15 -- Version 060
+=========================
+-DEPENDENCIES: AOC++ rev.15.
+-UPDATED: ZERnike calibration synch to AOC++.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.11.26 -- Version 059
+=========================
+-DEPENDENCIES: AOC++ rev.14.
+-ADDED: pupil mask display.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.11.24 -- Version 058
+=========================
+-DEPENDENCIES: AOC++ rev.13.
+-NEW: (see AOC++ update) slope display + flux.
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.11.23 -- Version 057
+=========================
+-DEPENDENCIES: AOC++ rev.12.
+-NEW: (see AOC++ update) added Python >> C++ named event manager project (DLL).
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.11.16 -- Version 056
+=========================
+-DEPENDENCIES: AOC++ rev.11.
+-ADDED: "AOC..." versions of the former CIAO files (GUI, AOC_MASTER.py, AOC_wfs, AOC_cam, AOC_tel, AOC_wfc)
+-ADDED: slope visualization window.
+-CHANGED: 'SET REF' button now sets the reference slopes from the last recorded acquisition batch (averaged last 50 frames).
+
+KNOWN BUGS:
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.07.22 -- Version 055
+=========================
+-UPDATED: commit of the last version working in the "old" configuration.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.07.22 -- Version 054
+=========================
+-UPDATED: code update.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.07.02 -- Version 053
+=========================
+-UPDATED: code update.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.03.02 -- Version 052
+=========================
+-UPDATED: code update.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.03.01 -- Version 051
+=========================
+-FIXED: lag when calibrating (removed 1s sleep).
+-FIXED: TCS offset correction.
+-ADDED: TCS Offset pixel scale edit box.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.02.05 -- Version 050
+=========================
+-FIXED: ixon_server -- camera frame rate in internal trigger mode fixed!! (needed to configure DMA event timings)
+-ADDED: ixon_server -- handling of camera temperature queries.
+-ADDED: CIAO_MASTER.py -- added temperature query button and display.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.01.29 -- Version 049
+=========================
+-UPDATED: ixon_server updated (slight increase in FPS with VS speed set to 0.1us instead of 0.45).
+-ADDED: camera temperature set point and cooling toggling implemented (tested OK).
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.01.29 -- Version 048
+=========================
+-UPDATED: wfs update.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.01.22 -- Version 047
+=========================
+-UPDATED: installation instructions updates.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.01.22 -- Version 046
+=========================
+-ADDED: new 'Utilities folder in the project tree containing the ConEmu installer as well as the default XML configuration files.
+-UPDATED: installation instructions.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2021.01.22 -- Version 045
+=========================
+-UPDATED: installation instruction files.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2020.12.18 -- Version 044
+=========================
+-UPDATED: code update.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2020.12.18 -- Version 043
+=========================
+-UPDATED: code update.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2020.12.18 -- Version 042
+=========================
+-FIXED: this files fix.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2020.12.18 -- Version 041
+=========================
+-ADDED: data logging capabilities.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2020.12.11 -- Version 040
+=========================
+-UPDATED: code update.
+-FIXED: problem of pupil definition in the sim caused improper wavefront correction.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2020.12.02 -- Version 039
+=========================
+-UPDATED: code update (DEV VERSION!!).
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+B039.001: load config does not reset the X0 grid offset.
+
+
+2020.12.02 -- Version 038
+=========================
+-UPDATED: code update.
+-ADDED: Zernike selection window.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.11.18 -- Version 037
+=========================
+-UPDATED: code update.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.11.18 -- Version 036
+=========================
+-UPDATED: code update.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.11.17 -- Version 035
+=========================
+-ADDED: BarGraph in the main GUI to show the DM modes global coefficients as well as the mode-corrections sent to the DM.
+-MODIFIED: rearrangement of the buttons/fields on the GUI.
+-UNDERDEV: Load/Save configuration files.
+-CHANGED: simulation mode for atmosphere simulation. Additional parameters to independently control the camera and atmosphere speeds.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.29 -- Version 034
+=========================
+-UPDATED: TCS offload modification (UNDER DEVELOPMENT).
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.28 -- Version 033
+=========================
+-UPDATED: code update.
+-UPDATED: TCS comms updated from CIAO_MASTER.
+-ADDED: TCS relative focus increments implemented (TCS comm).
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.24 -- Version 032
+=========================
+-UPDATED: functionnal version on sky 270Hz OK!
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.19 -- Version 031
+=========================
+-UPDATED: functionnal version up to 270Hz OK!
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.18 -- Version 030
+=========================
+-UPDATED: Multithreaded tests OK.
+-FIXED: shmlib file access problems seem to be fixed.
+-FIXED: multithread initialization/update fixed.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.18 -- Version 029
+=========================
+-UPDATED: Multithreaded tests. Some problems with memory Python >> C DLL. To be fixed.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.17 -- Version 028
+=========================
+-ADDED: ALPAO BOL115_pci7350.acfg and BOL115_pxe292144.acfg added in the dm_server folder.
+-UPDATED: CIAO functional version (tested up to ~120Hz) using DIO board ADLINK pxe292144. Looks like the ixon server code is slightly slower than under Windows 7 (in software trigger mode).
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.16 -- Version 027
+=========================
+-UPDATED: CIAO_MASTER calling C++ DLL. Checked loop speed (centroid) < 1ms (DLL call and centroid computation only).
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.15 -- Version 026
+=========================
+-UPDATED: DLL from Python updated with multi-threaded DLL call.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.07 -- Version 025
+=========================
+-UPDATED: code update. Functional (?) version.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.07 -- Version 024
+=========================
+-ADDED: DEV_CIAO folder containing several python/C++ tests.
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.10.07 -- Version 023
+=========================
+-UPDATED: general code update.
+-WORKAROUND: the 'alpao_server.py' script only works with Python 2.7.18 x86 (DIO board controller DLL x86/x64 issue!).
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.09.24 -- Version 022
+=========================
+-WORKAROUND: ixon_server -- camera trigger mode set to 'Software trigger' and reach up to 312Hz. Need to understand why the 'Internal trigger' mode does not work properly...
+
+KNOWN BUGS:
+B022.001: frame rate not reaching specs with 'internal trigger' mode.
+
+
+2020.09.23 -- Version 021
+=========================
+-FIXED: ixon_server -- fixed packed format (see below python 'unpack' problem).
+-WORKAROUND: CIAO_MASTER.py -- *problems* with Python 'struct.unpack': does not seem to properly take into account the bytes alignments in packed form (...)
+
+KNOWN BUGS:
+B018.001: CIAO_MASTER.py not refreshing live images from ixon_server.
+
+
+2020.09.22 -- Version 020
+=========================
+-UPDATED/FIXED: ixon_server working (stream OK). Fixed 'tint' change commands (fifo in/out)
+
+KNOWN BUGS:
+B018.001: CIAO_MASTER.py not refreshing live images from ixon_server.
+
+
+2020.09.22 -- Version 019
+=========================
+-UPDATED/FIXED: ixon_server fifo named pipe broken fixed (the python command 'os.path.exists(self.fifo_in)' breaks the pipe!!). ixon_server working (stream OK)
+
+KNOWN BUGS:
+B018.001: CIAO_MASTER.py not refreshing live images from ixon_server.
+
+
+2020.09.21 -- Version 018
+=========================
+-UPDATED/FIXED: ixon_server fifo named pipe broken fixed (the python command 'os.path.exists(self.fifo_in)' breaks the pipe!!). ixon_server working (stream OK)
+
+KNOWN BUGS:
+B018.001: CIAO_MASTER.py not refreshing live images from ixon_server.
+
+
+2020.09.21 -- Version 017
+=========================
+-FIXED: WRONG CODE for ixon_server_win (mess with SVN maybe).
+
+
+2020.09.21 -- Version 016
+=========================
+-FIXED: WRONG CODE for ixon_server_win (mess with SVN maybe).
+
+
+2020.09.21 -- Version 015
+=========================
+-FIXED: TT graph not updated with new calc_SH_data routine.
+
+
+2020.09.20 -- Version 014
+=========================
+-FIXED: updated wrong 'colormaps.py' file to be placed in 'Python\Python36\libs\'.
+
+
+2020.09.20 -- Version 013
+=========================
+-UPDATED: updated dmview/shmview.
+
+
+2020.09.20 -- Version 012
+=========================
+-UPDATED: updated "working" version in simulation mode ('mmap' problems at high turbulence speed...).
+
+
+2020.09.19 -- Version 011
+=========================
+-SVN: removed *.exe in the '\prober' folder.
+
+
+2020.09.19 -- Version 010
+=========================
+-UPDATED: CIAO_MASTER code update (running OK, but requires iXon server to be running(?)).
+-FIXED: shmview fixed and working (e.g. displays moving wavefront when xaosim 'ciao' simulation is running).
+
+
+2020.09.19 -- Version 009
+=========================
+-UPDATED: CIAO_MASTER code update (running OK).
+-REPLACED: ixon_server_win update from another copy location.
+
+
+2020.09.18 -- Version 008
+=========================
+-UPDATED: code update.
+-ADDED: posix_ipc_win module project folder tweaked for *named semaphores only* for use on Windows system.
+
+
+2020.09.14 -- Version 007
+=========================
+-UPDATED: code update.
+
+
+2020.09.10 -- Version 006
+=========================
+-REMOVED: xaosim -- removed 'dist' folder with *.egg files.
+
+
+2020.09.10 -- Version 005
+=========================
+-FIXED: ixon_server running OK. FIFO pipe tested ok (python console: fifo_write = open('\\\\.\\pipe\\ixon_fifo_in', 'w'), fifo_write.write("quit"), fifo_write.flush()).
+
+
+2020.09.10 -- Version 004
+=========================
+-FIXED: ixon_server fixes.
+
+
+2020.09.09 -- Version 003
+=========================
+-ADDED: xaosim (python) library to the repository.
+
+
+2020.09.09 -- Version 002
+=========================
+-UPDATED: code update (meesing with memory-mapped files and interface with external python code).
+
+
+2020.09.07 -- Version 001
+=========================
+-UPDATED: code compiling and running with ANDOR iXon-860.
+
+
+2020.09.07 -- Version 000
+=========================
+-NEW: first commit to master branch.
+

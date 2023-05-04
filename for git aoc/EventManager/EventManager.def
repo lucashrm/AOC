@@ -1,0 +1,9 @@
+LIBRARY		EventManager
+
+EXPORTS		register_named_event
+			unregister_named_event
+			unregister_all
+			trigger_named_event
+			chk_wait_status_named_event
+			wait_for_single_event
+			wait_for_multiple_events

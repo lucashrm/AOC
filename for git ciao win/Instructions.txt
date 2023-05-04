@@ -1,0 +1,24 @@
+DEMARRAGE DE LA MANIP SUR LE PC ALPAO
+=====================================
+
+1.  Start ConEmu (on the Windows desktop)
+2.  Next to the default terminal (labelled "<1>") right-click and select "New console dialog..."
+3.  A window appears. In the "Startup command or {task}" field, select the {CIAO} preset (if not already selected), and click 'START'.
+4.  A set of tabs are created next to the <1> tab.
+5.  Switch-on the ALPAO rack (and uncover the DM)
+5.  in the "dm_server" tab, write the following command:
+	python alpao_server.py
+6.  [TEMPORARY] launch Visual Studio 2010 ("infinite" blue icon on the task bar)
+7.  [TEMPORARY] Select the "ixon_server_win" project. If not available as a recent project, go to "Fichier> Ouvrir> Projet/Solution..." and navigate to the
+	C:\Home\Programmation\Projets\CIAO_win\ixon_server_win\
+    folder and select "ixon_server_win.sln".
+8.  [TEMPORARY] Check that the "Release" and "x64" project configuration is set (icon bar on the top), and click on the green "play" button (located under the "Release" and "x64") to start the camera server.
+9.  A windows console opens and after a few second it displays "iXon server ready." message.
+10. Once the 'alpao_server' and 'ixon_server_win' are started go to the 'CIAO_MASTER' tab and type in:
+	python CIAO_MASTER.py
+11. The main GUI appears.
+12. [OPTIONAL] the shared memory slots can be displayed by navigating to the 'dmview' tab and by typing in:
+	python dmview
+13. [OPTIONAL] the manual Zernike polynomials tools can be started by navigating to the 'zernike_alamano' tab and typing in:
+	python zernike_alamano.py
+14. Everything should be ready for operation.

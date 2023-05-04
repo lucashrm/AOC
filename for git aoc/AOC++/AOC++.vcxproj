@@ -1,0 +1,180 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{14982440-7EE9-4A64-BAB7-B4D7C9E2702F}</ProjectGuid>
+    <RootNamespace>AOC</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(MultiCODE_DIR)Includes;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(MultiCODE_DIR)Includes;$(MultiCODE_DIR)Includes\LibCPUID;$(MultiCODE_DIR)Includes\ALPAO;$(MultiCODE_DIR)..\..\AdditionalLibraries_vs2019\pThread4Windows\PTHREADS-BUILT\include;$(MultiCODE_DIR)..\..\AdditionalLibraries_vs2019\UltimateTCPIP\Include;$(WINUX_DIR)include;C:\Program Files\Andor SDK;C:\Program Files\Alpao\SDK\Include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LibraryPath>$(MultiCODE_DIR)Libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LibraryPath>$(MultiCODE_DIR_vs2019)Libs;$(MultiCODE_DIR_vs2019)Libs\CFitsIO;$(MultiCODE_DIR_vs2019)Libs\LibCPUID;$(MultiCODE_DIR_vs2019)Libs\FFTW;$(MultiCODE_DIR_vs2019)Libs\Meinberg;$(MultiCODE_DIR_vs2019)Libs\GSL;$(MultiCODE_DIR_vs2019)Libs\openssl;$(MultiCODE_DIR_vs2019)Libs\libssh2;$(MultiCODE_DIR_vs2019)Libs\curl;$(MultiCODE_DIR_vs2019)Libs\opencv;$(MultiCODE_DIR_vs2019)Libs\ALPAO\x64;$(MultiCODE_DIR)..\..\AdditionalLibraries_vs2019\pThread4Windows\PTHREADS-BUILT\lib;$(WINUX_DIR)lib;$(MultiCODE_DIR)..\..\AdditionalLibraries_vs2019\UltimateTCPIP\lib;$(MultiCODE_DIR)..\..\AdditionalLibraries_vs2019\CSMTP\lib;C:\Program Files\Andor SDK;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(MultiCODE_DIR)Includes;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(MultiCODE_DIR)Includes;$(MultiCODE_DIR)Includes\LibCPUID;$(MultiCODE_DIR)..\..\AdditionalLibraries\pThread4Windows\PTHREADS-BUILT\include;$(WINUX_DIR)include;$(MultiCODE_DIR)..\..\AdditionalLibraries\UltimateTCPIP\Include;C:\Program Files\Andor SDK;$(MultiCODE_DIR)Includes\ALPAO;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LibraryPath>$(MultiCODE_DIR)Libs;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LibraryPath>$(MultiCODE_DIR_vs2019)Libs;$(MultiCODE_DIR_vs2019)Libs\CFitsIO;$(MultiCODE_DIR_vs2019)Libs\LibCPUID;$(MultiCODE_DIR_vs2019)Libs\FFTW;$(MultiCODE_DIR_vs2019)Libs\Meinberg;$(MultiCODE_DIR_vs2019)Libs\GSL;$(MultiCODE_DIR_vs2019)Libs\openssl;$(MultiCODE_DIR_vs2019)Libs\libssh2;$(MultiCODE_DIR_vs2019)Libs\curl;$(MultiCODE_DIR_vs2019)Libs\opencv;$(MultiCODE_DIR_vs2019)Libs\ALPAO\x64;$(MultiCODE_DIR)..\..\AdditionalLibraries_vs2019\pThread4Windows\PTHREADS-BUILT\lib;$(WINUX_DIR)lib;$(MultiCODE_DIR)..\..\AdditionalLibraries_vs2019\UltimateTCPIP\lib;$(MultiCODE_DIR)..\..\AdditionalLibraries_vs2019\CSMTP\lib;C:\Program Files\Andor SDK;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_WIN32;WIN32;WINDOWS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_TIMESPEC_DEFINED;_CRT_SECURE_NO_WARNINGS;_WIN64;WIN64;WINDOWS;HAVE_WINDOWS_H;_AFXDLL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_WIN32;WIN32;WINDOWS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_TIMESPEC_DEFINED;_CRT_SECURE_NO_WARNINGS;_WIN64;WIN64;WINDOWS;HAVE_WINDOWS_H;_AFXDLL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <OpenMPSupport>true</OpenMPSupport>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <ShowIncludes>false</ShowIncludes>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="AOC_server.h" />
+    <ClInclude Include="aoc_timespec.h" />
+    <ClInclude Include="ImageCreate.h" />
+    <ClInclude Include="ImageStruct.h" />
+    <ClInclude Include="Simulation_Loader.hpp" />
+    <ClInclude Include="thread_calcSH_params.h" />
+    <ClInclude Include="thread_DataLogger_params.h" />
+    <ClInclude Include="thread_DMcmd_params.h" />
+    <ClInclude Include="thread_EvtWatch_params.h" />
+    <ClInclude Include="thread_iXon.hpp" />
+    <ClInclude Include="thread_iXon_params.h" />
+    <ClInclude Include="thread_TCPcom_params.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AOC_server.cpp" />
+    <ClCompile Include="ImageCreate.cpp" />
+    <ClCompile Include="thread_calcSH.cpp" />
+    <ClCompile Include="thread_DataLogger.cpp" />
+    <ClCompile Include="thread_DMcmd.cpp" />
+    <ClCompile Include="thread_EvtWatch.cpp" />
+    <ClCompile Include="thread_iXon.cpp" />
+    <ClCompile Include="thread_TCPcom.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

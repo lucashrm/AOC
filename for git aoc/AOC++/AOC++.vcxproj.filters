@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Fichiers sources">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Fichiers de ressources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Fichiers sources\Threads">
+      <UniqueIdentifier>{58f4f3f8-3ca4-4eb1-9957-1a7508c64ad4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AOC_server.h">
+      <Filter>Fichiers sources</Filter>
+    </ClInclude>
+    <ClInclude Include="thread_iXon_params.h">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="thread_calcSH_params.h">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="thread_DMcmd_params.h">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="thread_TCPcom_params.h">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="thread_EvtWatch_params.h">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="aoc_timespec.h">
+      <Filter>Fichiers sources</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageCreate.h">
+      <Filter>Fichiers sources</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageStruct.h">
+      <Filter>Fichiers sources</Filter>
+    </ClInclude>
+    <ClInclude Include="thread_DataLogger_params.h">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="thread_iXon.hpp">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="Simulation_Loader.hpp">
+      <Filter>Fichiers sources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AOC_server.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="thread_iXon.cpp">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="thread_calcSH.cpp">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="thread_DMcmd.cpp">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="thread_TCPcom.cpp">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="thread_EvtWatch.cpp">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageCreate.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="thread_DataLogger.cpp">
+      <Filter>Fichiers sources\Threads</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

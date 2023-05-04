@@ -1,0 +1,865 @@
+#!/usr/bin/env python3
+
+''' --------------------------------------------------------------------------
+
+Master GUI for the control of CIAO, the Calern Imaging Adaptive Observatory.
+
+Author: Frantz Martinache (frantz.martinache@oca.eu)
+-------------------------------------------------------------------------- '''
+
+from xaosim.QtMain import QtMain, QApplication
+from PyQt5 import QtCore, QtGui, uic
+from PyQt5.QtCore import QThread
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtGui import QImage
+
+import threading
+
+import pyqtgraph as pg
+import sys
+import numpy as np
+from numpy.linalg import solve
+import matplotlib.cm as cm
+
+import os
+import shutil
+
+import pdb
+import time
+
+import astropy.io.fits as pf
+import argparse
+
+# =====================================================================
+home = os.getenv('HOME')
+conf_dir = home+'\\.config\\ciao\\'
+if not os.path.exists(conf_dir):
+    os.makedirs(conf_dir)
+    
+ciao_home = os.getenv('CIAO_HOME')
+
+
+guidef = "ciao_gui.ui"
+try:
+    shutil.copy(guidef, conf_dir+guidef)
+except:
+    print("Problem with config directory?")
+	
+from ciao_wfs import WFS
+from ciao_wfc import *
+from ciao_cam import Cam
+
+# =====================================================================
+# =====================================================================
+myqt = 0 # to have myqt as a global variable
+logfile = ".\\ciao_log.html"
+
+def main(argv):
+    global myqt
+
+    parser = argparse.ArgumentParser(description="C2PU AO control GUI")
+    parser.add_argument("--simu", dest="simu", action="store_true",
+                        help="runs in simulated shared memory environment")
+    parser.add_argument("--ncpu", dest="ncpu", action="store", type=int, default=1,
+                        help="runs using the specified number of CPUs")
+
+    args = parser.parse_args()
+    parser.set_defaults(simu=False)
+    parser.print_help()
+    print("\n")
+    
+    ncpu = False
+    if args.ncpu > 1:
+        ncpu = args.ncpu
+        print("\nRUNNING THE WFS USING %d CPUs!\n" % (ncpu,))
+
+    myqt = QtMain()
+    gui = MyWindow(simu=args.simu, ncpu=ncpu)
+    myqt.mainloop()
+    myqt.gui_quit()
+    sys.exit()
+
+# =====================================================================
+#                               Tools 
+# =====================================================================
+def arr2im(arr, vmin=False, vmax=False, pwr=1.0, cmap=None, gamma=1.0):
+    ''' --------------------------------------------------------------
+    Convert a numpy array into image for display:
+
+    limits dynamic range, power coefficient, applies colormap and gamma
+    --------------------------------------------------------------  '''
+    arr2 = arr.astype('float')
+    if vmin is False:
+        mmin = arr2.min()
+    else:
+        mmin = vmin
+
+    if vmax is False:
+        mmax = arr2.max()
+    else:
+        mmax = vmax
+
+    arr2 -= mmin
+    if mmax != mmin:
+        arr2 /= (mmax-mmin)
+
+    arr2 = arr2**pwr
+
+    #cm.jet.set_gamma(0.1)
+    if cmap == None:
+        mycmap = cm.jet
+    else:
+        mycmap = cmap
+
+    res = mycmap(arr2)
+    res[:,:,3] = gamma
+    return(res)
+
+# =====================================================================
+#                         Thread specifics
+# =====================================================================
+class GenericThread(QtCore.QThread):
+    ''' ---------------------------------------------------
+    generic thread class used to externalize the execution
+    of a function (calibration, closed-loop) to a separate
+    thread.
+    --------------------------------------------------- '''
+    def __init__(self, function, *args, **kwargs):
+        QtCore.QThread.__init__(self)
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+ 
+    def __del__(self):
+        self.wait()
+ 
+    def run(self):
+        self.function(*self.args,**self.kwargs)
+        return
+
+# =====================================================================
+#                          Main GUI object
+# =====================================================================
+
+class MyWindow(QtGui.QMainWindow):
+    ''' ------------------------------------------------------
+    This is the meat of the program: the class that drives
+    the GUI.
+
+    Parameters:
+    ----------
+    - simu: boolean (set to True to run in simulated env)
+    - ncpu: integer (set value to use the required number of CPUs)
+    ------------------------------------------------------ '''
+    def __init__(self, simu=True, ncpu=False):
+        global index
+        self.simu    = simu # simulation or real thing?
+        self.shm_cam = None
+        self.shm_wfs = None
+        self.vmin    = False
+        self.vmax    = False
+        self.mycmap  = cm.magma
+        self.pwr     = 1.0
+        self.thresh  = 0
+        self.cam_counter = -1
+
+        # =========================================
+        #               offsets
+        # =========================================
+        self.ostep = 0.5 # size of the offset step
+        self.xoff  = 0.0 # keep track of total offset commands
+        self.yoff  = 0.0 # sent to the WFS
+        
+        self.wfc_enabled        = False
+        self.wfc_status_updated = True  # control GUI updates
+        self.wfc_calibrating    = ""    # control variable
+        
+        super(MyWindow, self).__init__()
+        if not os.path.exists(conf_dir + guidef):
+            uic.loadUi(guidef, self)
+        else:
+            uic.loadUi(conf_dir + guidef, self)
+
+        # ==============================================
+        #         prepare the image displays
+        # ==============================================
+        # -- first, the camera --
+        self.gView_SH_cam.hideAxis('left')
+        self.gView_SH_cam.hideAxis('bottom')
+
+        self.imv_raw = pg.ImageItem()
+        self.overlay = pg.GraphItem()
+        
+        self.gView_SH_cam.addItem(self.imv_raw)
+        self.gView_SH_cam.addItem(self.overlay)
+
+        # -- second, the WFS data --
+        self.gView_SH_info.hideAxis('left')
+        self.gView_SH_info.hideAxis('bottom')
+
+        self.imv_WFS = pg.ImageItem()
+        self.gView_SH_info.addItem(self.imv_WFS)
+
+        # -- the tip-tilt log plot --
+        self.logplotx = self.gView_TT_log.plot([0,200],[0,0],
+                                               pen=(0,255,0), name="ttx")
+        self.logploty = self.gView_TT_log.plot([0,200],[0,0],
+                                               pen=(0,0,255), name="tty")
+        
+        # ==============================================
+        #             GUI widget actions 
+        # ==============================================
+        self.dspB_disp_min.valueChanged[float].connect(self.update_vmin)
+        self.dspB_disp_max.valueChanged[float].connect(self.update_vmax)
+
+        self.chB_min.stateChanged[int].connect(self.update_vmin)
+        self.chB_min.stateChanged[int].connect(self.update_vmax)
+        self.chB_min.setChecked(True)
+        self.update_vmin()
+        
+        self.chB_nonlinear.stateChanged[int].connect(self.update_nonlinear)
+        
+        self.cmB_cbar.addItems(['gray',    'hot',   'jet',
+                                'viridis', 'magma', 'inferno',
+                                'plasma'])
+        self.cmB_cbar.activated[str].connect(self.update_cbar)
+        self.cmB_cbar.setCurrentIndex(3)
+        self.update_cbar()
+        
+        self.chB_show_grid.stateChanged[int].connect(self.redraw_SH_grid)
+        self.spB_grid_x0.valueChanged[int].connect(self.redraw_SH_grid)
+        self.spB_grid_y0.valueChanged[int].connect(self.redraw_SH_grid)
+        self.spB_grid_dx.valueChanged[float].connect(self.redraw_SH_grid)
+        self.spB_grid_dy.valueChanged[float].connect(self.redraw_SH_grid)
+        #self.spB_grid_imin.valueChanged[int].connect(self.updt_SH_threshold)
+
+        # ==============================================
+        #             top-menu actions
+        # ==============================================
+        self.actionQuit.triggered.connect(self.exit)
+        self.actionQuit.setShortcut('Ctrl+Q')
+
+        if self.simu:
+            self.shmf = "R:\\ciao_shcam.im.shm"
+        else:
+            self.shmf = "R:\\ixon.im.shm"
+
+        self.shm_cam = shm(self.shmf,packed=True,verbose=True)
+        self.wfs = WFS(shmf=self.shmf, ncpu=ncpu)
+        
+        self.pB_WFS_off.clicked.connect(self.wfs_stop)
+        self.pB_WFS_on.clicked.connect(self.wfs_start)
+        self.pB_WFS_ref.clicked.connect(self.wfs_set_ref)
+        self.pB_grid_set.clicked.connect(self.wfs_regrid)
+        
+        # --- camera / DM setup control ---
+        self.pB_DM_shutdown.clicked.connect(self.alpao_shutdown)
+        self.pB_DM_start.clicked.connect(self.alpao_start)
+
+        #self.mycam = Cam(fifo_dir="/home/ciaodev/bin/")
+        self.mycam = Cam(fifo_dir="\\\\.\\pipe\\")
+        if self.mycam.connected:
+            self.enable_cam_gui(state=True)
+
+        self.pB_cam_stream.clicked.connect(self.mycam.stream)
+        self.pB_cam_stop.clicked.connect(self.mycam.pause)
+
+        self.pB_cam_tint_inc.clicked.connect(self.mycam.tint_inc)
+        self.pB_cam_tint_dec.clicked.connect(self.mycam.tint_dec)
+        self.pB_cam_shutdown.clicked.connect(self.ixon_shutdown)
+
+        self.pB_Simulation.clicked.connect(self.set_simulation)
+
+        # ==============================================
+        self.show()
+        
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.refresh_all)
+        self.timer.start(100)
+
+        # --- wavefront control callbacks ---
+        self.TT_WFC  = TT_WFC()               # tip-tilt wavefront control
+        self.ZON_WFC = ZON_WFC()              # Zonal wavefront contrl
+        self.ZER_WFC = ZER_WFC(iz0=2, iz1=12) # Zernike wavefront control
+
+        self.TT_WFC.reload_cal(fname=conf_dir+"TT_CAL.fits")
+        self.ZON_WFC.reload_cal(fname=conf_dir+"ZON_CAL.fits")
+        self.ZER_WFC.reload_cal(fname=conf_dir+"ZER_CAL.fits")
+
+        self.dspB_zo_a0.setValue(self.ZON_WFC.a0)
+        self.dspB_zer_a0.setValue(self.ZER_WFC.a0)
+        self.dspB_tt_a0.setValue(self.TT_WFC.a0)
+
+
+        self.dspB_zer_nz.valueChanged[int].connect(self.zer_update_nz)
+        
+        for sensor in ["tt", "zer", "zo"]:
+            exec("self.pB_%s_abort.clicked.connect(self.%s_abort)" % (sensor, sensor))
+            exec("self.pB_%s_cloop.clicked.connect(self.%s_cloop)" % (sensor, sensor))
+            exec("self.pB_%s_recal.clicked.connect(self.%s_calib)" % (sensor, sensor))
+            exec("self.pB_%s_reset.clicked.connect(self.%s_reset_correc)" % (sensor, sensor))
+            exec("self.dspB_%s_gain.valueChanged[float].connect(self.%s_update_gain)" % (sensor, sensor))
+            exec("self.%s_update_gain()" % (sensor,))
+
+        # ====================================================
+        # live tip-tilt offsets
+        # ====================================================
+        self.pB_tt_dx_p.clicked.connect(self.ttx_offset_p)
+        self.pB_tt_dx_m.clicked.connect(self.ttx_offset_m)
+        self.pB_tt_dy_p.clicked.connect(self.tty_offset_p)
+        self.pB_tt_dy_m.clicked.connect(self.tty_offset_m)
+
+        # ====================================================
+        
+    # =========================================================
+    def disable_wfc(self, subsystem=""):
+        ''' ----------------------------------------------------------
+        Disable *all* buttons associated to the WFC loops (default)
+
+        unless a valid subsystem is specified in which case, only that
+        one is disabled.
+        ---------------------------------------------------------- '''
+        wfcs = ["tt", "zer", "zo"]
+
+        if subsystem in wfcs:
+            wfcs = [subsystem]
+        else:
+            self.wfc_enabled = False # WFC disabled globally
+            print("global wfc disable")
+        for wfc in wfcs:
+            exec('self.pB_%s_recal.setEnabled(False)' % (wfc,))
+            exec('self.pB_%s_cloop.setEnabled(False)' % (wfc,))
+        
+    # =========================================================
+    def enable_wfc(self, subsystem=""):
+        ''' ----------------------------------------------------------
+        Enable *all* buttons associated to the WFC loops
+
+        unless a valid subsystem is specified in which case, only that
+        one is enabled.
+        ---------------------------------------------------------- '''
+        wfcs = ["tt", "zer", "zo"] # list of valid wfc loops
+
+        if subsystem in wfcs:
+            wfcs = [subsystem]
+            print("global wfc ENABLE!")
+        else:
+            self.wfc_enabled = True # WFC enabled globally
+            
+        for wfc in wfcs:
+            exec('self.pB_%s_recal.setEnabled(True)' % (wfc,))
+            exec('self.pB_%s_cloop.setEnabled(True)' % (wfc,))
+            print("%s enabled" % (wfc,))
+
+    # =========================================================
+    def wfs_regrid(self,):
+        ''' ----------------------------------------------------------
+        Updates the grid used by the WFS to output signal
+        ---------------------------------------------------------- '''
+        x0 = self.spB_grid_x0.value()
+        y0 = self.spB_grid_y0.value()
+        self.wfs.update_grid(
+            x0=self.spB_grid_x0.value(),
+            y0=self.spB_grid_y0.value(),
+            dx=self.spB_grid_dx.value(),
+            dy=self.spB_grid_dy.value(),
+            i0=self.spB_grid_imin.value())
+        self.wfs.update_cells()
+        self.wfs.define_SH_data()
+        self.log("Updated grid set-up", "blue")
+
+    # =========================================================
+    def enable_wfs_gui(self, state=True):
+        ''' Enables/disables buttons of the WFS GUI'''
+        self.pB_WFS_on.setEnabled(state)
+        self.pB_grid_set.setEnabled(state)
+
+    # =========================================================
+    def wfs_start(self,):        
+        ''' ----------------------------------------------------------
+        Starts the process measuring WFS data (ttxy + phot)
+        ---------------------------------------------------------- '''        
+        self.enable_wfs_gui(state=False)
+        self.wfsThread = GenericThread(self.wfs.loop)
+        self.wfsThread.start()
+        self.log("Wavefront sensing resumed", "green")
+        self.wfc_status_updated = True
+        self.enable_wfc()
+        
+    # =========================================================
+    def wfs_stop(self,):
+        ''' ----------------------------------------------------------
+        Interrupts the process measuring WFS data (ttxy + phot)
+        ---------------------------------------------------------- '''        
+        self.wfs.keepgoing = False
+        self.enable_wfs_gui(state=True)
+        self.log("Wavefront sensor paused", "orange")
+        self.disable_wfc()
+        
+    # =========================================================
+    def wfs_set_ref(self,):
+        ''' ----------------------------------------------------------
+        Sets the current tip-tilt position as the reference state
+        ---------------------------------------------------------- '''        
+        self.wfs.keepgoing = False
+        self.enable_wfs_gui(state=True)
+        self.wfs.calc_SH_data(ref=True)
+        self.log("Current pos. set as reference", "blue")
+
+    # =========================================================
+    def exit(self):
+        try:
+            pf.writeto(conf_dir+"ZER_CAL.fits",
+                       self.ZER_WFC.RR,
+                       overwrite=True)
+        except:
+            print("Zernike calibration matrices not saved")
+            
+        try:
+            pf.writeto(conf_dir+"TT_CAL.fits",
+                       self.TT_WFC.RR,
+                       overwrite=True)
+        except:
+            print("Tip-tilt calibration matrices not saved")
+            
+        try:
+            pf.writeto(conf_dir+"ZON_CAL.fits",
+                       self.ZON_WFC.RR,
+                       overwrite=True)
+        except:
+            print("Zonal calibration matrices not saved")            
+        sys.exit()
+
+    # =========================================================
+    def closeEvent(self, event):
+        ''' ----------------------------------------------------------
+        GUI call: activated when corner of window is clicked.
+        Attempts to save the calibration matrices!
+        ---------------------------------------------------------- '''
+        self.TT_WFC.save_cal(conf_dir+"TT_CAL.fits")
+        self.ZER_WFC.save_cal(conf_dir+"ZER_CAL.fits")
+        self.ZON_WFC.save_cal(conf_dir+"ZON_CAL.fits")
+                    
+        self.wfs.keepgoing     = False
+        self.wfs.stop() # explicit for release of CPUs
+        self.TT_WFC.keepgoing  = False
+        self.ZER_WFC.keeggoing = False
+        self.ZON_WFC.keeggoing = False
+        
+        time.sleep(1) # pause to shutdown external processes
+        sys.exit()
+        
+    # =========================================================
+    def refresh_stats(self):
+        ''' ----------------------------------------------------------
+        Displays the properties of the live image + some other info,
+        such as: exposure time & tip-tilt.
+        ---------------------------------------------------------- '''        
+
+        pt_levels = [0, 5, 10, 20, 50, 75, 90, 95, 99, 100]
+        pt_values = np.percentile(self.data_cam, pt_levels)
+        
+        msg = "<pre>\n"
+        msg += "exp.time = %7.3f ms\n" % (self.mycam.cam_tint * 1e3)
+        
+        for i, ptile in enumerate(pt_levels):
+            msg += "p-tile %3d = %8.2f\n" % (ptile, pt_values[i])
+        msg += "\ntt_xy = (%+.2f,%+.2f)\n" % (self.wfs.ttx_mean, self.wfs.tty_mean)
+        msg += "</pre>"
+        self.lbl_stats.setText(msg)
+
+    # =========================================================
+    def redraw_SH_grid(self):
+        ''' ----------------------------------------------------------
+        Displays a grid overlaid the camera image.
+        ---------------------------------------------------------- '''        
+        self.SH_x0 = self.spB_grid_x0.value()
+        self.SH_y0 = self.spB_grid_y0.value()
+        self.SH_dx = self.spB_grid_dx.value()
+        self.SH_dy = self.spB_grid_dy.value()
+
+        isz = 128
+        
+        nx = int((isz - self.SH_x0) / self.SH_dx + 2)
+        xx = self.SH_x0 + np.arange(nx-1) * self.SH_dx
+        if (isz - xx[-1] > self.SH_dx/2+2):
+            xx = np.append(xx, isz)
+        
+        ny = int((isz - self.SH_y0) / self.SH_dy + 2)
+        yy = self.SH_y0 + np.arange(ny-1) * self.SH_dy
+        if (isz - yy[-1] > self.SH_dy/2+2):
+            yy = np.append(yy, isz)
+    
+        posx = np.zeros((2 * nx, 2), dtype=np.int)
+        for i, myx in enumerate(xx):
+            posx[2*i, 0] = myx
+            posx[2*i, 1] = yy[0]
+            posx[2*i+1, 0] = myx
+            posx[2*i+1, 1] = min(yy[-1], isz-1) # -1 for display
+        
+        posy = np.zeros((2 * ny, 2), dtype=np.int)
+        for i, myy in enumerate(yy):
+            posy[2*i,   1] = myy
+            posy[2*i,   0] = xx[0]
+            posy[2*i+1, 1] = myy
+            posy[2*i+1, 0] = min(xx[-1], isz-1)
+    
+        pos = np.append(posy, posx, axis=0)        
+        adj = np.arange(2*(nx+ny)).reshape(nx+ny, 2)
+
+        self.SH_xx = xx
+        self.SH_yy = yy
+        
+        if self.chB_show_grid.isChecked():
+            self.overlay.setData(pos=pos, adj=adj,
+                                 pen=(255,0,0,255), size=0,
+                                 #symbolPen=None, symbolBrush=None,
+                                 pxMode=False)
+        else:
+            self.overlay.setData(pos=pos, adj=adj, pen=None, size=1,
+                                 #symbolPen=None, symbolBrush=None,
+                                 pxMode=False)
+    # =========================================================
+    def refresh_all(self):
+        ''' ----------------------------------------------------------
+        Refresh the display
+
+        Independently from the "under the hood" engine, the display
+        gets refreshed every now and then, to give visual feedback
+        to the user.
+        ---------------------------------------------------------- '''        
+        if self.cam_counter < self.shm_cam.get_counter():
+            self.data_cam = self.shm_cam.get_data(check=False, reform=True)
+            self.cam_counter = self.shm_cam.get_counter()
+            self.imv_raw.setImage(arr2im(self.data_cam.T,
+                                         vmin=self.vmin, vmax=self.vmax,
+                                         pwr=self.pwr,
+                                         cmap=self.mycmap), border=1)
+        # --------
+#        print(self.wfs.ttx_log)
+        self.logplotx.setData(self.wfs.ttx_log)
+        self.logploty.setData(self.wfs.tty_log)
+        self.refresh_wfs_display()
+        self.refresh_stats()
+
+        # -------
+        if self.wfc_status_updated: # only update GUI if needed
+            self.wfc_status_updated = False
+
+            if self.wfc_enabled:
+                self.enable_wfc()
+            else:
+                self.disable_wfc()
+
+            if self.TT_WFC.calib_on or self.TT_WFC.loop_on:
+                self.disable_wfc(subsystem="tt")
+            else:
+                self.enable_wfc(subsystem="tt")
+
+            if self.ZER_WFC.calib_on or self.ZER_WFC.loop_on:
+                self.disable_wfc(subsystem="zer")
+            else:
+                self.enable_wfc(subsystem="zer")
+            
+            if self.ZON_WFC.calib_on or self.ZON_WFC.loop_on:
+                self.disable_wfc(subsystem="zo")
+            else:
+                self.enable_wfc(subsystem="zo")
+
+
+        # -------
+        if self.wfc_calibrating == "TT": # query thread status
+            if self.ttcal_Thread.isFinished():
+                self.enable_wfc(subsystem="tt")
+                self.log("TT calibration is over", "green")
+                self.wfc_calibrating = ""
+
+        # -------
+        if self.wfc_calibrating == "ZER": # query thread status
+            if self.zercal_Thread.isFinished():
+                self.enable_wfc(subsystem="zer")
+                self.log("ZER calibration is over", "green")
+                self.wfc_calibrating = ""
+
+        # -------
+        if self.wfc_calibrating == "ZON": # query thread status
+            if self.zocal_Thread.isFinished():
+                self.enable_wfc(subsystem="zo")
+                self.log("ZON calibration is over", "green")
+                self.wfc_calibrating = ""
+
+            
+    # =========================================================
+    def refresh_wfs_display(self):
+        ''' ----------------------------------------------------------
+        Specific display refresh for the WFS data (ttxy + phot)
+        ---------------------------------------------------------- '''        
+        self.imv_WFS.setImage(
+            arr2im(np.concatenate(self.wfs.SH_comb),
+                   vmin=-5, vmax=5, pwr=1, cmap=self.mycmap),
+            border=1)
+    
+    # =========================================================
+    def update_cbar(self):
+        ''' ----------------------------------------------------------
+        Updates the colorbar used to display images in the GUI
+        ---------------------------------------------------------- '''        
+        cbar = str(self.cmB_cbar.currentText()).lower()
+        try:
+            exec('self.mycmap = cm.%s' % (cbar,))
+        except:
+            print("colormap %s is not available" % (cbar,))
+            self.mycmap = cm.jet
+
+    # =========================================================
+    def update_vmin(self):
+        ''' ----------------------------------------------------------
+        Sets a new minimum value for the SH image display
+        ---------------------------------------------------------- '''        
+        #self.cam_counter -= 1
+        self.vmin = False
+        if self.chB_min.isChecked():
+            self.vmin = self.dspB_disp_min.value()
+        
+    # =========================================================
+    def update_vmax(self):
+        ''' ----------------------------------------------------------
+        Sets a new maximum value for the SH image display
+        ---------------------------------------------------------- '''        
+        self.cam_counter -= 1
+        self.vmax = False
+        if self.chB_max.isChecked():
+            self.vmax = self.dspB_disp_max.value()
+
+    # =========================================================
+    def update_nonlinear(self):
+        ''' ----------------------------------------------------------
+        Switch between linear and square root display for SH image
+        ---------------------------------------------------------- '''        
+        self.cam_counter -= 1
+        self.pwr = 1.0
+        if self.chB_nonlinear.isChecked():
+            self.pwr = 0.5
+
+    # =========================================================
+    def log(self, message="", color="black", crt=True):
+        ''' --------------------------------------------------
+        Convenient logging function.
+
+        Parameter: 
+        - msg   : the string to log (html text)
+        - color : a valid html color name (default "black"
+        - crt   : a flag for carriage return (default: True)
+        
+        Add a time stamp !
+        Write to a log file !
+        -------------------------------------------------- '''
+        global myqt
+        myline = "<b><font color='%s'>%s %s</font></b>" % (
+            color, time.strftime('%D %H:%M:%S'), message)
+        if crt:
+            myline += "<br>"
+        try:
+            myqt.gui_do(self.text_log.insertHtml, myline)
+            with open(logfile, "a") as mylogfile:
+                mylogfile.write(myline+"\n")
+
+        except:
+            print("'%s' did not log?" % (myline,))
+            pass
+
+        # these two lines scroll the text display down
+        temp = self.text_log.textCursor()
+        myqt.gui_do(self.text_log.setTextCursor, temp)
+
+    # =========================================================
+    #        wavefront control callbacks !!
+    # =========================================================
+
+    # =========================================================
+    # ---                      TIP-TILT                     ---
+    # =========================================================
+        
+    def tt_abort(self):
+#        msg = self.TT_WFC.abort()
+        self.TT_WFC.keepgoing = False
+#        self.log(msg, "red")
+        self.enable_wfc(subsystem="tt")
+
+    # =========================================================
+    def tt_reset_correc(self):
+        self.TT_WFC.reset()
+        self.log("TT correction reset!", "green")
+
+    # =========================================================
+    def tt_calib(self):
+        self.TT_WFC.keepgoing = False
+        nav = self.spB_nav.value()
+        a0 = self.dspB_tt_a0.value()
+        self.TT_WFC.nav = nav
+        self.disable_wfc(subsystem="tt")
+        self.log("TT loop calibration starts", "blue")
+        self.log("cal: nav=%d, a0=%.2f" % (nav, a0), "blue")
+        self.ttcal_Thread = GenericThread(self.TT_WFC.calibrate,
+                                          a0=a0, reform=False)
+        self.wfc_calibrating = "TT"
+        self.ttcal_Thread.start()
+        
+    # =========================================================
+    def tt_update_gain(self):
+        gain = self.dspB_tt_gain.value()
+        self.TT_WFC.gain = gain
+        self.log("TT loop gain updated =%.2f" % (gain,), "blue")
+
+    # =========================================================
+    def tt_cloop(self):
+        self.ttloop_Thread = GenericThread(self.TT_WFC.cloop)
+        self.log("TT closed loop!", "green")
+        self.ttloop_Thread.start()
+        self.disable_wfc(subsystem="tt")
+
+    # =========================================================
+    # ---                     Zernike                       ---
+    # =========================================================
+    def zer_abort(self):
+#        msg = self.ZER_WFC.abort()
+#        self.log(msg, "red")
+        self.ZER_WFC.keepgoing = False
+        self.enable_wfc(subsystem="zer")
+        
+    # =========================================================
+    def zer_reset_correc(self):
+        self.ZER_WFC.reset()
+        self.log("Zernike correction reset!", "green")
+
+    # =========================================================
+    def zer_calib(self):
+        self.ZER_WFC.keepgoing = False
+        nav = self.spB_nav.value()
+        a0 = self.dspB_zer_a0.value()
+        self.ZER_WFC.nav = nav
+        self.disable_wfc(subsystem="zer")
+        self.log("Zernike loop calibration starts", "blue")
+        self.log("cal: nav=%d, a0=%.2f" % (nav, a0), "blue")
+        self.zercal_Thread = GenericThread(self.ZER_WFC.calibrate,
+                                           a0=a0, reform=False)
+        self.wfc_calibrating = "ZER"
+        self.zercal_Thread.start()
+        
+    # =========================================================
+    def zer_update_gain(self):
+        gain = self.dspB_zer_gain.value()
+        self.ZER_WFC.gain = gain
+        self.log("ZERNIKE loop gain updated =%.2f" % (gain,), "blue")
+
+    # =========================================================
+    def zer_cloop(self):
+        self.zerloop_Thread = GenericThread(self.ZER_WFC.cloop)
+        self.log("Zernike closed loop!", "green")
+        self.zerloop_Thread.start()
+        self.disable_wfc(subsystem="zer")
+
+    # =========================================================
+    def zer_update_nz(self):
+        nz = self.dspB_zer_nz.value()
+        self.ZER_WFC = ZER_WFC(iz0=2, iz1=nz+2)
+        self.log("Zernike basis of modes updated. Recalibrate", "orange")
+
+    # =========================================================
+    # ---                     ZONAL                         ---
+    # =========================================================
+    def zo_abort(self):
+#        msg = self.ZON_WFC.abort()
+#        self.log(msg, "red")
+        self.ZON_WFC.keepgoing = False
+        self.enable_wfc(subsystem="zo")
+
+    # =========================================================
+    def zo_reset_correc(self):
+        self.ZON_WFC.reset()
+        self.log("ZON correction reset!", "green")
+
+    # =========================================================
+    def zo_calib(self):
+        self.ZON_WFC.keepgoing = False
+        nav = self.spB_nav.value()
+        a0 = self.dspB_zo_a0.value()
+        self.ZON_WFC.nav = nav
+        self.disable_wfc(subsystem="zo")
+        self.log("ZON loop calibration starts", "blue")
+        self.log("cal: nav=%d, a0=%.2f" % (nav, a0), "blue")
+        self.zocal_Thread = GenericThread(self.ZON_WFC.calibrate,
+                                          a0=a0, reform=False)
+        self.wfc_calibrating = "ZON"
+        self.zocal_Thread.start()
+        
+    # =========================================================
+    def zo_update_gain(self):
+        gain = self.dspB_zo_gain.value()
+        self.ZON_WFC.gain = gain
+        self.log("Zonal loop gain updated =%.2f" % (gain,), "blue")
+
+    # =========================================================
+    def zo_cloop(self):
+        self.ttloop_Thread = GenericThread(self.ZON_WFC.cloop)
+        self.log("ZON closed loop!", "green")
+        self.ttloop_Thread.start()
+        self.disable_wfc(subsystem="zo")
+
+    # =========================================================
+    #         call-backs for tip-tilt offsets
+    # =========================================================
+
+    def ttx_offset_p(self): 
+        self.tt_offset(axis="x", sign="-")
+    def ttx_offset_m(self):
+        self.tt_offset(axis="x", sign="+")
+    def tty_offset_p(self):
+        self.tt_offset(axis="y", sign="-")
+    def tty_offset_m(self):
+        self.tt_offset(axis="y", sign="+")
+    # =========================================================
+
+    def tt_offset(self, axis="x", sign="+"):
+        ''' ----------------------------------------
+        processes the offset requests from user
+        ---------------------------------------- '''
+        
+        exec("self.wfs.SH_%sref %s= self.ostep" % (axis, sign))
+        exec("self.%soff %s= self.ostep" % (axis, sign))
+
+        if axis == "x": # this is not pretty but works for now
+            exec("self.log('%s-axis pointing offset = %.1f pixels', 'orange')" % (axis.upper(), self.xoff))
+        else:
+            exec("self.log('%s-axis pointing offset = %.1f pixels', 'orange')" % (axis.upper(), self.yoff))
+            
+    # =========================================================
+    def ixon_shutdown(self):
+        self.mycam.quit()
+        self.enable_cam_gui(state=False)
+        self.log("iXon camera was shut down", "blue")
+
+    # =========================================================
+    def enable_cam_gui(self, state=True):
+        ''' Enables/disables *all* buttons of the camera GUI'''
+        
+        self.pB_cam_stream.setEnabled(state)
+        self.pB_cam_stop.setEnabled(state)
+        self.pB_cam_tint_inc.setEnabled(state)
+        self.pB_cam_tint_dec.setEnabled(state)
+        self.pB_cam_shutdown.setEnabled(state)
+
+    # =========================================================
+    def alpao_shutdown(self):
+        os.system("touch "+ciao_home+"dm_stop")
+        self.log("alpao DM was shut down", "blue")
+
+    # =========================================================
+    def alpao_start(self):
+        os.system("cd " + ciao_home + "& start /B .\\alpao_server")
+        self.log("alpao DM was turned on!", "blue")
+
+# ==========================================================
+# ==========================================================
+if __name__ == "__main__":
+    main(sys.argv)

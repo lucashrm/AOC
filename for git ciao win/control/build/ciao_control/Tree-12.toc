@@ -1,0 +1,7 @@
+('c:\\users\\ao@c2pu\\appdata\\roaming\\python\\python36\\site-packages\\python_dateutil-2.8.1-py3.6.egg',
+ None,
+ {'*.pyd', '*.cp36-win_amd64.pyd', '*.pyc', '*.pyw', '*.py', 'EGG-INFO'},
+ 'DATA',
+ [('dateutil\\zoneinfo\\dateutil-zoneinfo.tar.gz',
+   'c:\\users\\ao@c2pu\\appdata\\roaming\\python\\python36\\site-packages\\python_dateutil-2.8.1-py3.6.egg\\dateutil\\zoneinfo\\dateutil-zoneinfo.tar.gz',
+   'DATA')])

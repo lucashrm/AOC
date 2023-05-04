@@ -1,0 +1,13 @@
+[WFSGrid]
+dx = 12.8
+dy = 12.8
+x0 = 0
+y0 = 0
+
+[Calibration]
+numsamppercalib = 50
+
+[TCS_Offload]
+offloadpixscale = 0.5
+tel_mon_period_sec = 10.0
+

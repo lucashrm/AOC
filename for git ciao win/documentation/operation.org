@@ -1,0 +1,263 @@
+#+TITLE: Mise en route de CIAO
+#+AUTHOR: Frantz Martinache
+
+* Après un reboot de l'ordinateur
+
+Normalement, la machine devrait avoir démarré sous Linux. Si ça n'est
+pas le cas, je me demande bien comment vous faites pour lire ces
+quelques lignes de toute façon.
+
+Après un reboot, il faut mettre en route les drivers de la carte de
+controle de la caméra iXon et du DM ALPAO. La procédure pourrait etre
+automatisée mais où serait le fun là dedans? Pour impressionner les
+touristes, il faut lancer des commandes dans un terminal, qui
+affichent plein de messages compliqués.
+
+** To start the driver for the camera:
+
+#+begin_src sh
+cd /home/ciaodev/Documents/CIAO/Andor_SDK/V2.99.30002.0/andor/script/
+sudo bash ./andordrvlx_load
+#+end_src
+
+Rien de très impressionnant ici: la commande renvoit un simple:
+
+"andor driver installed"
+
+** To start the DM driver again:
+
+#+begin_src sh
+cd /home/ciaodev/src/driver_DM/
+sudo bash ./install.sh
+cd
+#+end_src
+
+Ici le retour est beaucoup plus verbose: pas mal de warnings mais à
+la fin, on voit:
+
+#+begin_src text
+Load kernel modules
+Create configuration file gpg2x72c.conf
+====================================================================
+ Ref.ID | Model                          | RSW1 |  Type | Device No.  
+--------------------------------------------------------------------
+      1 | PEX-292144                     |    0 |    DI |    17
+--------------------------------------------------------------------
+      2 | PEX-292144                     |    0 |    DO |    18
+====================================================================
+#+end_src 
+
+Tout est bon. Les drivers sont chargés et on peut commencer à
+intéragir avec le matériel.
+
+* Lancement des serveurs de controle du matos
+
+Après les drivers, il faut lancer les serveurs pour le DM et la
+caméra. Il est recommandé de lancer ces serveurs dans des fenêtres
+et/ou des terminaux qui restent ouverts. Pour limiter le nombre de
+fenetres ouvertes, le mieux c'est d'utiliser "screen", une vieille
+commande avec des raccourcis pas très ergonomiques mais qui permet de
+lancer des process depuis une fenetre ssh (par exemple), de les
+détacher pour qu'ils continuent à s'executer sans avoir à rester
+connecté, et qui permet de se connecter de temps en temps.
+
+Pour lancer screen, la commande est... vous avez deviné:
+
+#+begin_src sh
+screen
+#+end_src
+
+Un écran d'accueil vous indique que c'est bon. Dans cet
+environnement, on peut lancer les serveurs du DM et de la caméra.
+
+** Miroir déformable
+
+La commande qui lance le serveur du DM est:
+
+#+begin_src sh
+cd
+alpao_server &
+#+end_src
+
+Le serveur du DM est pour le moment discret et n'écrit pas grand
+chose après ses messages initiaux:
+
+#+begin_src text
+Use x86_64 libraries.
+/tmp/dmdisp0.im.shm will be created or overwritten
+/tmp/dmdisp1.im.shm will be created or overwritten
+/tmp/dmdisp2.im.shm will be created or overwritten
+/tmp/dmdisp3.im.shm will be created or overwritten
+/tmp/dmdisp4.im.shm will be created or overwritten
+/tmp/dmdisp5.im.shm will be created or overwritten
+/tmp/dmdisp6.im.shm will be created or overwritten
+/tmp/dmdisp7.im.shm will be created or overwritten
+/tmp/ciao_dm_disp.im.shm will be created or overwritten
+#+end_src
+
+On peut visualiser les 8 channels du DM simultanément avec un petit
+programme... Screen ne permet pas d'utiliser des fenêtres
+graphiques. Pour l'utiliser, il faut détacher la session screen, avec
+le raccourci suivant:
+
+"Ctrl-A Ctrl-D" (pour "detach")
+
+
+#+begin_src sh
+dmview &
+#+end_src
+
+qui devrait afficher une fenetre simple avec 2x5 panels dont seuls
+les #0 et #8 affichent quelquechose. Ce qui est appliqué sur le #0
+c'est le flat qui a été établi après réception du DM devant
+l'interféromètre de Zygo.
+
+[[file:dmview.png][dmview.png]]
+
+** la caméra iXon
+
+Pour lancer le serveur de controle de la caméra, il faut retourner
+dans l'environnement screen. Le mieux est de se rattacher à celui déjà
+créé pour le DM:
+
+#+begin_src sh
+screen -r
+#+end_src
+
+Et une fois relancé, de créer une nouvelle fenêtre dans la même
+session screen:
+
+"Ctrl-A Ctrl-C"
+
+Dans lequel on peut lancer les commandes suivantes:
+
+#+begin_src sh
+cd ~/src/CIAO/ixon_server
+./ixon_server
+#+end_src
+
+Si tout se passe bien, on entend assez vite le bruit du shutter de la
+caméra claquer une fois. Pour le moment, le refroidissement Pelletier
+de la caméra n'est pas actif, aussi le démarrage est rapide. Lorsqu'il
+faudra utiliser le mode EMCCD, il faudra recompiler le code en
+activant la mise à température.
+
+Avec refroidissement activé, le démarrage peut prendre plusieurs
+minutes. Mais à un moment, il va dire:
+
+"iXon sever ready."
+
+La fete peut donc enfin commencer!
+
+On peut maintenant détacher (ou pas la session screen) avec le même
+"Ctrl-A Ctrl-D" de tout à l'heure.
+
+** remarques complémentaires sur SCREEN
+
+*** Pour se rattacher à une session en cours:
+
+#+begin_src sh
+screen -r
+#+end_src
+
+*** commandes dans une session SCREEN
+
+|------------------------------+---------------|
+| Intention                    | Commande      |
+|------------------------------+---------------|
+| Créer une nouvelle fenêtre   | Ctrl-A Ctrl-C |
+| Passer à la fenêtre suivante | Ctrl-A Ctrl-N |
+| Détacher la session          | Ctrl-A Ctrl-D |
+| Fermer la fenêtre en cours   | exit          |
+|------------------------------+---------------|
+
+* Lancement du logiciel de controle de l'AO
+
+Dans un nouveau terminal, ou un nouvel onglet du terminal en cours
+(créé en appuyant sur Ctrl-Shift T, ou alors avec un clic droit sur la
+fenetre du terminal), il faut lancer la commande suivante:
+
+#+begin_src sh
+cd ~/src/CIAO/control
+./CIAO_MASTER 1&
+#+end_src
+
+L'option "1" est pour utiliser le GUI en mode vrai de vrai alors que
+l'option "0" est utilisée par Frantz pur développer en dehors du
+système.
+
+
+[[file:~/src/CIAO/documentation/CIAO_MASTER.png][CIAO_MASTER.png]]
+
+qui lance le GUI de controle de l'AO. Comme la caméra n'a encore pas
+fait d'acquisition, tout est à zero, nan, vide... mais il suffit
+d'appuyer sur le bouton "STREAM" dans le panel gauche du GUI pour que
+la situation change!
+
+Le GUI est plus ou moins organisé en 3 panels:
+
+- à gauche, c'est le controle de la caméra
+- au milieu, c'est la paramétrisation de l'ASO
+- à droite, c'est le controle de divers asservissements
+
+** controle de la caméra
+
+Tout se passe dans le panel gauche.
+
+** paramétrisation de l'utilisation du WFS
+
+** controle de front d'onde
+* Autres outils disponibles
+** Tweaking par actionneur
+
+La commande suivante:
+
+#+begin_src sh
+cd ~/src/CIAO/control
+./alpao_poker_shm.py
+#+end_src
+
+lance un petit programme dont l'interface ressemble à ceci:
+
+[[pokem.png]]
+
+
+Le plus simple, c'est (pour une fois) d'utiliser la souris pour sélectionner l'actionneur qu'on a envie de tripoter et de cliquer dessus. Ensuite, on peut jouer sur la commande envoyée à l'actionneur en utilisant la roulette de la souris ou les flèches horizontales (gauche - droite) sur le clavier. Si l'effet de la modulation n'est pas assez rapide à vos yeux, appuyer sur le SHIFT gauche du clavier pendant la manipe augmente la modulation par un facteur 10.
+
+* Arret de la manipe
+
+** Serveur de la camera
+
+Il faut lui envoyer la commande "quit". Plusieurs façons de faire:
+
+1. depuis CIAO_MASTER, dans le panneau en haut à gauche, on peut
+   cliquer sur le bouton shutdown.
+
+2. en ligne de commande, il faut écrire:
+
+>> echo "quit" > /home/ciaodev/bin/ixon_fifo_in
+
+Dans tous les cas, on entend le shutter de la caméra qui se baisse et
+le refroidissement qui s'arrete. Tout est plus silencieux.
+
+** Serveur du DM
+
+Egalement depuis le GUI, le bouton "shutdown" du DM permet d'éteindre
+le serveur.
+
+Dans les deux cas, on peut vérifier en se connectant dans la fenêtre
+screen (avec "screen -r' et en alternant entre les deux sessions avec
+"Ctrl-A Ctrl-N" que les deux serveurs sont bien arrêtés.
+
+** shutdown
+
+- Débrancher du secteur l'alim du refroidissement de la camera
+- éteindre le boitier d'alim du DM (inter à l'arrière du boitier)
+- débrancher le boitier d'alim du DM du secteur
+- shutdown de l'ordinateur
+- débrancher l'alim de l'ordinateur du secteur
+- débrancher la prise réseau de l'ordinateur
+
+
+
+

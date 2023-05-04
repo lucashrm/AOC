@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DEV_CIAO", "DEV_CIAO\DEV_CIAO.vcxproj", "{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DLLfromPython", "DLLfromPython\DLLfromPython.vcxproj", "{0A0207DE-3F40-40AC-87D7-B683E934A9E7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrecisionEventTimer", "PrecisionEventTimer\PrecisionEventTimer.vcxproj", "{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}.Debug|Win32.Build.0 = Debug|Win32
+		{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}.Debug|x64.ActiveCfg = Debug|x64
+		{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}.Debug|x64.Build.0 = Debug|x64
+		{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}.Release|Win32.ActiveCfg = Release|Win32
+		{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}.Release|Win32.Build.0 = Release|Win32
+		{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}.Release|x64.ActiveCfg = Release|x64
+		{9FD2E54C-CBA0-4C68-8760-4B27F7D022E0}.Release|x64.Build.0 = Release|x64
+		{0A0207DE-3F40-40AC-87D7-B683E934A9E7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0A0207DE-3F40-40AC-87D7-B683E934A9E7}.Debug|Win32.Build.0 = Debug|Win32
+		{0A0207DE-3F40-40AC-87D7-B683E934A9E7}.Debug|x64.ActiveCfg = Debug|x64
+		{0A0207DE-3F40-40AC-87D7-B683E934A9E7}.Debug|x64.Build.0 = Debug|x64
+		{0A0207DE-3F40-40AC-87D7-B683E934A9E7}.Release|Win32.ActiveCfg = Release|Win32
+		{0A0207DE-3F40-40AC-87D7-B683E934A9E7}.Release|Win32.Build.0 = Release|Win32
+		{0A0207DE-3F40-40AC-87D7-B683E934A9E7}.Release|x64.ActiveCfg = Release|x64
+		{0A0207DE-3F40-40AC-87D7-B683E934A9E7}.Release|x64.Build.0 = Release|x64
+		{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}.Debug|Win32.Build.0 = Debug|Win32
+		{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}.Debug|x64.ActiveCfg = Debug|x64
+		{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}.Debug|x64.Build.0 = Debug|x64
+		{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}.Release|Win32.ActiveCfg = Release|Win32
+		{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}.Release|Win32.Build.0 = Release|Win32
+		{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}.Release|x64.ActiveCfg = Release|x64
+		{F73AA332-28C3-481F-86DA-AA1B2A2C2F16}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

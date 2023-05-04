@@ -1,0 +1,14 @@
+Metadata-Version: 1.1
+Name: xaosim
+Version: 2.0.0
+Summary: Package for eXtreme Adaptive Optics Simulation
+Home-page: http://github.com/fmartinache/xaosim
+Author: Frantz Martinache
+Author-email: frantz.martinache@oca.eu
+License: GPL
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Professional Astronomers
+Classifier: Topic :: High Angular Resolution Astronomy :: Interferometry
+Classifier: Programming Language :: Python :: 3.6

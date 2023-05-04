@@ -1,0 +1,288 @@
+#!/usr/bin/env python
+
+import pygame, sys
+from pygame.locals import *
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import pdb
+import threading
+import mmap
+import struct
+import os
+import astropy.io.fits as fits
+from PIL import Image
+
+from xaosim.shmlib import shm
+
+aoc_home = os.getenv('HOME') + 'bin\\'
+
+pyhome = os.getenv('PYTHON_HOME')
+exec(open(pyhome+'\\libs\\colormaps.py').read())
+cindex = 0
+cmaps = []
+cmaps.append(cm.gray)
+mycmap = cm.jet#magma#viridis
+
+cmaps.append(viridis)
+cmaps.append(inferno)
+cmaps.append(magma)
+cmaps.append(plasma)
+cmaps.append(cm.jet)
+
+ncmaps = cmaps.__len__()
+
+# -----------------------
+#   set up the window
+# -----------------------
+pygame.init()
+
+# ------------------------------------------------------------------
+#                       global variables
+# ------------------------------------------------------------------
+nch = 8                     # number of channels
+dms = 11                    # dm diameter (in actuator)
+sz  = 4*dms*dms             # short hand for array size in bytes
+sm_fname = []               # shared memory file names for channels
+sm_cntr  = np.zeros(nch) -1 # shared memory frame counter for channels
+gb_cntr  = -1               # combined counter
+zoom = 20                    # zoom for the display of the maps
+nActDM = 97
+
+dstep = zoom*dms
+
+FPS = 20                        # frames per second setting
+fpsClock = pygame.time.Clock()  # start the pygame clock!
+XW, YW = 5*dstep, 2*dstep       # window size
+screen = pygame.display.set_mode((XW, YW), 0, 32)#FULLSCREEN, 32)
+pygame.display.set_caption('DM multi-channel display!')
+
+vActMapping = list(fits.getdata(aoc_home + 'ActuatorsMappingIndices.fits'))
+
+# ------------------------------------------------------------------
+#                access to shared memory structures
+# ------------------------------------------------------------------
+
+# LAST CHANNEL (nch+1) IS DEDICATED TO THE COLLAPSED BUFFER
+for i in range(nch):
+#    exec "disp%d = shm('/tmp/dmdisp%d.im.shm', verbose=False)" % (i,i)
+    #disp0 = shm('R:/dmdisp0.im.shm', verbose=False)
+    # cmd = "global disp%d; disp%d = shm('R:\\dmdisp%d.im.shm', verbose=False)" % (i, i,i)
+    cmd = "global disp%d; disp%d = shm('R:\\DM_Buffer_%02d.im.shm', verbose=False)" % (i, i,i)
+    print(cmd)
+    exec(cmd)
+#    cmd = "mycounter = disp%d.get_counter()" % (i)
+#    exec(cmd)
+#    print(mycounter)
+
+#disp = shm('/tmp/ciao_dm_disp.im.shm', verbose=False)
+#disp = shm('R:/ciao_dm_disp.im.shm', verbose=True)
+# disp = shm('R:\\ciao_dm_disp.im.shm', verbose=True)
+disp = shm('R:\\aoc_dm.im.shm', verbose=False)
+
+# ------------------------------------------------------------------
+#             short hands for shared memory data access
+# ------------------------------------------------------------------
+def get_counter_channel(chn):
+    ''' ----------------------------------------
+    Return the current channel counter value.
+    Reads from the already-opened shared memory
+    data structure.
+    ---------------------------------------- '''
+#    print('chn: %d' % (chn))
+    global cnt
+    if chn < 8:
+#        print("chn=%d" % (chn,))
+        exec("global cnt; cnt = disp%d.get_counter()" % (chn))
+    else: # chn == 8:
+        global cnt
+#        global disp
+        cnt = disp.get_counter()
+
+#    print("cnt = %d" % (cnt,))
+    return cnt
+
+# ===
+# ===
+
+def get_data_channel(chn):
+    ''' ----------------------------------------
+    Return the current channel data content,
+    formatted as a 2D numpy array.
+    ---------------------------------------- '''
+#    print('chn: %d' %(chn,))
+    global arr
+    if chn < 8:
+#        exec("arr = disp%d.get_data()" % (chn,))
+#        print("Hi1")
+        cmd = "global arr; arr = disp%d.get_data()" % (chn)
+        exec(cmd)
+    else: # chn == 8:
+#        print("Hi2")
+        arr = disp.get_data()
+    return(arr)
+
+# ------------------------------------------------------------------
+#  another short hand to convert numpy array into image for display
+# ------------------------------------------------------------------
+def arr2im(arr, vmin=-0.5, vmax=0.5):
+    # print(arr.shape)
+    sqarr_disp = np.zeros(dms*dms)
+    sqarr_disp[vActMapping] = arr
+
+    sqarr_disp = sqarr_disp.reshape((dms,dms))
+
+    # print('sqarr_disp >> ')
+    # print(sqarr_disp, sqarr_disp.shape)
+    # print('arr >> ')
+    # print(arr, arr.shape)
+
+    mmin,mmax = sqarr_disp.min(), sqarr_disp.max() # vmin, vmax #
+
+    img = Image.fromarray(sqarr_disp.astype('float'))
+    rimg = img.resize((zoom*dms, zoom*dms))
+    rarr = np.asarray(rimg)
+
+    arr2 = rarr.copy()
+
+    arr2 -= mmin
+    arr2 /= (mmax-mmin+1e-9)
+    test = mycmap(arr2)
+    return((255*test[:,:,:3]).astype('int'))
+
+# ------------------------------------------------------------------
+#              !!! now we are in business !!!!
+# ------------------------------------------------------------------
+
+# zo = np.zeros((dms, dms))
+zo = np.zeros(nActDM)
+for i in range(nch):
+    exec("ch%d = arr2im(zo)" % (i,))
+
+WHITE = (255, 255, 255)
+GREEN = (  0, 255,   0)
+BLUE  = (  0,   0, 255)
+RED   = (255,   0,   0)
+BLK   = (  0,   0,   0)
+
+# ----------------------------
+#   auxilliary coordinates
+# ----------------------------
+xx, yy = np.zeros(10), np.zeros(10)
+
+for ii in range(4):
+    for jj in range(2):
+        xx[ii+jj*4] = ii * dstep
+        yy[ii+jj*4] = jj * dstep
+
+xx[8], yy[8] = 4*dstep, 0
+xx[9], yy[9] = 4*dstep, dstep
+
+# ----------------------------
+#          labels
+# ----------------------------
+#myfont = pygame.font.Font(r'C:\Python\Python36\Lib\site-packages\pygame\sans.ttf', 14)
+myfont = pygame.font.Font('C:\Windows\Fonts\Tahoma.ttf', 16)
+
+lbls = ["#0: flat",
+        "#1: turbulence",
+        "#2: tip-tilt",
+        "#3: howfs",
+        "#4: Zalamano",
+        "#5: poker",
+        "#6: calib",
+        "#7: empty",
+        "#8: combined"]
+
+for i in range(nch+1):
+    exec("lbl%d = myfont.render(lbls[%d], True, pygame.Color(255,255,255,0))" % (i, i))
+    exec("rct%d = lbl%d.get_rect()" % (i,i))
+    exec("rct%d.center = (dstep/2+xx[%d], dstep+yy[%d]-20)" % (i,i,i))
+
+UD, LR = 0, 0 # up-down and left-right flags (they can be combined)
+
+
+while True: # the main game loop
+    clicked = False
+#    print('173: nch = %d' %(nch))
+    for i in range(nch):
+#        print("i=%d" %(i))
+        test = get_counter_channel(i)
+        #print i, test
+        if test != sm_cntr[i]:
+                sm_cntr[i] = test
+                global temp
+                temp = get_data_channel(i)
+                # print('len(temp) >> ',i,len(temp))
+                # exec("global temp,ch%d; ch%d = arr2im(temp.flatten(), vmin=-1.0, vmax=1.0)" % (i,i))
+                exec("global temp,ch%d; ch%d = arr2im(temp.flatten(), vmin=-1.0, vmax=1.0)" % (i,i))
+                exec("global surf%d; surf%d = pygame.surface.Surface((zoom*dms, zoom*dms))" % (i,i))
+                exec("pygame.surfarray.blit_array(surf%d, ch%d)" % (i,i))
+                exec("screen.blit(surf%d, (%d, %d))" % (i, xx[i], yy[i]))
+
+    test = get_counter_channel(8)
+    if test != gb_cntr:
+        gb_cntr = test
+        temp = get_data_channel(8)
+        # print('len(temp) >> ',temp.shape)
+        ch8 = arr2im(temp.flatten(), vmin=-1.0, vmax=1.0)
+        surf8 = pygame.surface.Surface((dstep, dstep))
+        pygame.surfarray.blit_array(surf8, ch8)
+        screen.blit(surf8, (xx[8], yy[8]))
+
+    pygame.draw.line(screen, WHITE, (0, YW/2), (XW, YW/2), 3)
+    for i in range(4):
+        X0 = (i+1)*dstep
+        pygame.draw.line(screen, WHITE, (X0, 0), (X0, YW), 3)
+
+    for i in range(nch+1):
+        exec("screen.blit(lbl%d, rct%d)" % (i,i))
+
+    # =====================================
+    for event in pygame.event.get():
+
+        if event.type == QUIT:
+            pygame.quit()
+
+            # close shared memory access
+            # --------------------------
+            for i in range(nch):
+                exec("disp%d.close()" % (i,))
+
+            disp.close()
+
+            print("dmgame has ended normally.")
+            sys.exit()
+        elif event.type == KEYDOWN:
+
+            if event.key == K_ESCAPE:
+                pygame.quit()
+                # close shared memory access
+                # --------------------------
+                for i in range(nch):
+                    exec("disp%d.close()" % (i,))
+
+                disp.close()
+
+                print("dmgame has ended normally.")
+                sys.exit()
+
+            if event.key == K_F1:
+                screen = pygame.display.set_mode((XW, YW), FULLSCREEN, 32)
+                print(FULLSCREEN)
+        elif event.type == KEYUP:
+            LR = 0
+            UD = 0
+
+        elif event.type == MOUSEMOTION:
+            mx, my = event.pos
+        elif event.type == MOUSEBUTTONUP:
+            mx, my = event.pos
+            # print ("mx, my = %d, %d" % (mx, my))
+            clicked = True
+
+    pygame.display.update()
+    fpsClock.tick(FPS)
+
+pygame.quit()
+sys.exit()

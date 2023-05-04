@@ -1,0 +1,5 @@
+('c:\\users\\ao@c2pu\\appdata\\roaming\\python\\python38\\site-packages\\xaosim-2.0.0-py3.8.egg',
+ None,
+ {'*.pyc', '*.pyd', '*.cp38-win_amd64.pyd', 'EGG-INFO', '*.py', '*.pyw'},
+ 'DATA',
+ [])

@@ -1,0 +1,35 @@
+# MAKEFILE FOR Winux PROJECT
+
+DIRSRC = .\src
+DIRINC = .\include
+DIROBJ = .\build
+OUT_DIR = .
+CC = cl.exe
+LD = lib.exe
+OPTIONS_CC = /Wall /C
+OPTIONS_LNK = /Wall
+
+LIBS = 
+
+
+FICLIB = $(OUT_DIR)\winux.lib
+
+# Nom des fichiers sources C/PP
+FICSRCC = $(DIRSRC)\time\time.cpp
+#$(DIRSRC)\semaphore\semaphore.cpp
+
+# Nom des fichiers objets correspondant aux fichiers sources C++
+FICOBJC = $(FICSRCC:.cpp=.obj)
+
+#Edition de liens
+$(FICLIB): $(FICOBJC)
+	@echo Edition de liens $@
+	$(LD) /OUT:$(FICLIB) $(FICOBJC)
+#$(CC) $(OPTIONS_CC) $(DIRINCS) $(FICOBJC) /Fo $@ $(LIBS)
+
+# Compilation des fichiers sources C/CPP
+$(FICOBJC): $(FICSRCC)
+	@echo Compilation de $@
+	@echo $(FICOBJC)
+	@echo $(FICSRCC)
+	$(CC) $(OPTIONS_CC) $(@D)\$(@F:.obj=.cpp) /I$(DIRINC) /Fo$(DIROBJ)\$(@F:.cpp=.obj)

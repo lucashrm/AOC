@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommand>c:\python\python36\python.exe</LocalDebuggerCommand>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>-m "C:\RSI\SourcesC\CIAO_win\DEV_CIAO\DLLfromPython\python_dll.py"</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommand>c:\python\python36\python.exe</LocalDebuggerCommand>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>C:\RSI\SourcesC\CIAO_win\DEV_CIAO\DLLfromPython\python_dll.py</LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>C:\RSI\SourcesC\CIAO_win\DEV_CIAO\DLLfromPython\</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+</Project>

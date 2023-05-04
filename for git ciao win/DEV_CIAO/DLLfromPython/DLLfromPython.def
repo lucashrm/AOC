@@ -1,0 +1,18 @@
+LIBRARY		DLLfromPython
+
+EXPORTS		calc_SH_data
+			nop
+			StartThread_ThreadManager
+			TerminateThread_ThreadManager
+			trigger_calc_SH_data
+			trigger_calc_SH_data_mt
+			trigger_calc_SH_data_mt_test
+			set_thread_params
+			StartThread_MonitorTimings
+			TerminateThread_MonitorTimings
+			SetMonitorFrequency
+			ClearMonitoringEvents
+			AddMonitoringEvent
+			InitializeTimingEvents
+			StartMonitor
+			TriggerTimingEvent

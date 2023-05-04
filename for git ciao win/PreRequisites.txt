@@ -1,0 +1,46 @@
+CIAO Control Software
+=====================
+
+0. PREREQUISITE
+===============
+    .Install Visual Studio 2010 C++
+    .Install Visual C++ Service Pack 1 (SP1, https://www.microsoft.com/fr-fr/download/details.aspx?id=34677)
+    .Install Microsoft Platform SDK 7.1 (FILE: GRMSDKX_EN_DVD.iso, https://www.microsoft.com/en-us/download/details.aspx?id=8279 -> select 'Install instructions' and click on the 'iSO Image File' link)
+    .Install Visual Studio 2019 Community with C++ environment
+    .Install the latest version of Tortoise SVN x64 (https://tortoisesvn.net/downloads.html)
+    .Install Python 3.8.6 x64 release as your default Python environment, and select the 'C:\Python\Python38' as the install folder).
+
+
+A. SETUP
+========
+    .Create the following folder tree:
+        C:\
+          +Home\
+            +Programmation\
+              +Projets\
+                +CIAO_win\
+                +MultiCODE\
+    .Create the folder named '.config' in 'C:\Users\AOC\' (when creating the folder, it may be necessary to input the ame '.config.', where the last dot will be removed by Windows; this should not be necessary with the latest versions of Windows 10 ver '20H2')
+    .Select the 'MultiCODE' folder, right click and select 'SVN Checkout...', enter 'https://svn.oca.eu/codes/MultiCODE' in 'URL of repository', and click 'OK' (you should have the access to the repository)
+    .Select the 'CIAO_win' folder, right click and select 'SVN Checkout...', enter 'https://svn.oca.eu/codes/abeIDLRoutines/SourcesC/CIAO_win' in 'URL of repository', and click 'OK' (you should have the access to the repository)
+    .Go to "Panneau de configuration> Système> Paramètres système avancés" (left pane), click on "Variables d'environnement", and add the following "Variables système":
+      CIAO_HOME             C:\Home\Programmation\Projets\CIAO_win\
+      HOME                  C:\Users\AOC\
+      MCODE_DLL_PATH_x64    C: \Program Files\MultiCODE\DLLs\x64
+      MCODE_DLL_PATH_x86    C: \Program Files\MultiCODE\DLLs\x86
+      MultiCODE_DIR         C:\Home\Programmation\Projets\MultiCODE\MultiCODE\trunk\
+      PYTHON_HOME           C:\Python\Python38
+      WINUX_DIR             C:\Home\Programmation\Projets\CIAO_win\Winux\
+
+    .In Visual Studio Express 2019, open and compile the 'posix_ipc_win' solution ('posix_ipc_win.sln', located in the 'CIAO_win\posix_ipc_win\posix_ipc\posix_ipc_win\' folder) in x64 Release.
+    .In Visual C++ 2010, open and compile the 'ixon_server_win' solution ('ixon_server_win.sln', located in the 'CIAO_win\ixon_server_win' folder) in x64 Release.
+    .Install ConEmu (installation source located in the 'CIAO_win\Utilities\ConEmu' folder), and copy the 'ConEmu.xml' file into the ConEmu installation folder.
+    .Open a console with Administrator privileges (if not set by default, right click, select 'Executer en tant qu'administrateur'), Change dir to the xaosim_win folder and execute 'python -m setup.py install' (should use the 3.8 Python) to install the xaosim library.
+    
+
+B. ENVIRONMENT SETUP
+====================
+    .Run 'ConEmu' (desktop icon)
+    .While in ConEmu, right-click somewhere next to the default tab, and select "New console dialog...", and select '{CIAO}' as the 'Startup command'
+    
+    

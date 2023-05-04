@@ -1,0 +1,12 @@
+Camera side:
+DU 860E CSO #BV
+Serial: X-7699
+Date: Nov. 2012
+
+
+Board side:
+Andor Technology PLC
+iXon PCI Express
+PCB 03561 Rev.C
+STM 5E207844
+94V-0 4413

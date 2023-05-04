@@ -1,0 +1,26 @@
+LIBRARY		Winux_x64
+
+EXPORTS		
+			gettimeofday
+			times
+			my_sem_init
+			my_sem_wait
+			my_sem_trywait
+			my_sem_timedwait
+			my_sem_post
+			my_sem_getvalue
+			my_sem_destroy
+			my_sem_open
+			my_sem_close
+			my_sem_unlink
+			getopt
+			getpagesize
+			mq_close
+			mq_getattr
+			mq_notify
+			mq_open
+			mq_receive
+			mq_send
+			mq_setattr
+			mq_unlink
+			mq_timedreceive
