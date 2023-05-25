@@ -1,87 +1,10 @@
-﻿  AOC_server.cpp
+﻿  thread_iXon.cpp
 C:\Users\lucas\Documents\STAGE\CIAO_Win\Winux\include\semaphores.h(70,1): warning C4005: 'UNUSED' : redéfinition de macro
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\atlmfc\include\afx.h(396): message : voir la définition précédente de 'UNUSED'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\aoc_timespec.h(7,1): warning C4005: '_TIMESPEC_DEFINED' : redéfinition de macro
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp : message : voir la définition précédente de '_TIMESPEC_DEFINED'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(970,1): warning C4267: 'argument' : conversion de 'size_t' en 'DWORD', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(1080,1): warning C4267: 'argument' : conversion de 'size_t' en 'DWORD', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(1212,26): warning C4244: '=' : conversion de 'acs::Scalar' en 'int', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(1450,1): warning C4267: 'argument' : conversion de 'size_t' en 'DWORD', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(1600,84): warning C4244: '/=' : conversion de 'double' en '_Ty', perte possible de données
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(1604,48): warning C4244: '=' : conversion de 'double' en '_Ty', perte possible de données
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(1775,28): warning C4305: '=' : troncation de 'double' à 'float'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(1862,38): warning C4244: 'argument' : conversion de 'double' en '_Ty', perte possible de données
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\AOC_server.cpp(1863,38): warning C4244: 'argument' : conversion de 'double' en '_Ty', perte possible de données
-          with
-          [
-              _Ty=float
-          ]
-  ImageCreate.cpp
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\aoc_timespec.h(7,1): warning C4005: '_TIMESPEC_DEFINED' : redéfinition de macro
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp : message : voir la définition précédente de '_TIMESPEC_DEFINED'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(46,25): warning C4244: '=' : conversion de '__int64' en 'long', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(121,20): warning C4018: '<' : incompatibilité signed/unsigned
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(112,10): warning C4101: 'command' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(114,9): warning C4101: 'semfile' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(111,9): warning C4101: 'r' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(273,55): warning C4267: 'argument' : conversion de 'size_t' en 'LONG', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(278,31): warning C4311: '<function-style-cast>' : troncation de pointeur de 'HANDLE' à 'int32_t'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(278,31): warning C4302: '<function-style-cast>' : troncation de 'HANDLE' à 'int32_t'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(791,17): warning C4018: '<' : incompatibilité signed/unsigned
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(181,9): warning C4101: 'SM_fd' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(183,9): warning C4101: 'result' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(175,12): warning C4101: 'lt' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(174,12): warning C4101: 'ii' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(189,10): warning C4101: 'kname' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\ImageCreate.cpp(188,10): warning C4101: 'comment' : variable locale non référencée
-  thread_calcSH.cpp
-C:\Users\lucas\Documents\STAGE\CIAO_Win\Winux\include\semaphores.h(70,1): warning C4005: 'UNUSED' : redéfinition de macro
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\atlmfc\include\afx.h(396): message : voir la définition précédente de 'UNUSED'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\aoc_timespec.h(7,1): warning C4005: '_TIMESPEC_DEFINED' : redéfinition de macro
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_calcSH.cpp : message : voir la définition précédente de '_TIMESPEC_DEFINED'
-  thread_DataLogger.cpp
-C:\Users\lucas\Documents\STAGE\CIAO_Win\Winux\include\semaphores.h(70,1): warning C4005: 'UNUSED' : redéfinition de macro
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\atlmfc\include\afx.h(396): message : voir la définition précédente de 'UNUSED'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\aoc_timespec.h(7,1): warning C4005: '_TIMESPEC_DEFINED' : redéfinition de macro
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_DataLogger.cpp : message : voir la définition précédente de '_TIMESPEC_DEFINED'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_DataLogger.cpp(143,84): warning C4267: 'argument' : conversion de 'size_t' en 'DWORD', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_DataLogger.cpp(87,16): warning C4101: 'now' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_DataLogger.cpp(86,16): warning C4101: 't0' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_DataLogger.cpp(342,171): warning C4267: 'argument' : conversion de 'size_t' en 'const int', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_DataLogger.cpp(310,16): warning C4101: 'now' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_DataLogger.cpp(309,16): warning C4101: 't0' : variable locale non référencée
-  thread_DMcmd.cpp
-C:\Users\lucas\Documents\STAGE\CIAO_Win\Winux\include\semaphores.h(70,1): warning C4005: 'UNUSED' : redéfinition de macro
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\atlmfc\include\afx.h(396): message : voir la définition précédente de 'UNUSED'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\aoc_timespec.h(7,1): warning C4005: '_TIMESPEC_DEFINED' : redéfinition de macro
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_DMcmd.cpp : message : voir la définition précédente de '_TIMESPEC_DEFINED'
-  thread_EvtWatch.cpp
-C:\Users\lucas\Documents\STAGE\CIAO_Win\Winux\include\semaphores.h(70,1): warning C4005: 'UNUSED' : redéfinition de macro
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\atlmfc\include\afx.h(396): message : voir la définition précédente de 'UNUSED'
-  thread_iXon.cpp
-C:\Users\lucas\Documents\STAGE\CIAO_Win\Winux\include\semaphores.h(70,1): warning C4005: 'UNUSED' : redéfinition de macro
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\atlmfc\include\afx.h(396): message : voir la définition précédente de 'UNUSED'
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_iXon.cpp(299,74): warning C4267: '=' : conversion de 'size_t' en 'int', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_iXon.cpp(318,91): warning C4267: 'argument' : conversion de 'size_t' en 'DWORD', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_iXon.cpp(306,16): warning C4101: 'li_prev' : variable locale non référencée
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_iXon.cpp(1107,27): warning C4305: '=' : troncation de 'double' à 'float'
-  thread_TCPcom.cpp
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_TCPcom.cpp(43,25): warning C4244: '=' : conversion de 'long double' en '__int64', perte possible de données
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_TCPcom.cpp(62,16): warning C4244: '=' : conversion de 'uint64_t' en 'long double', perte possible de données
-  Génération de code en cours...
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_iXon.cpp(371): warning C4715: 'CallWaitForAcquisitionTimeout' : les chemins de contrôle ne retournent pas tous une valeur
-C:\Users\lucas\oa_c2pu\for git aoc\AOC++\thread_iXon.cpp(384): warning C4715: 'CallGetLastNumberImages' : les chemins de contrôle ne retournent pas tous une valeur
-msvcrtd.lib(initializers.obj) : warning LNK4098: conflit entre la bibliothèque par défaut 'msvcrt.lib' et les autres bibliothèques ; utilisez /NODEFAULTLIB:library
-  AOC++.vcxproj -> C:\Users\lucas\oa_c2pu\for git aoc\x64\Debug\AOC++.exe
+C:\Users\lucas\Documents\STAGE\Github\AOC\for git aoc\AOC++\thread_iXon.cpp(307,74): warning C4267: '=' : conversion de 'size_t' en 'int', perte possible de données
+C:\Users\lucas\Documents\STAGE\Github\AOC\for git aoc\AOC++\thread_iXon.cpp(326,91): warning C4267: 'argument' : conversion de 'size_t' en 'DWORD', perte possible de données
+C:\Users\lucas\Documents\STAGE\Github\AOC\for git aoc\AOC++\thread_iXon.cpp(314,16): warning C4101: 'li_prev' : variable locale non référencée
+C:\Users\lucas\Documents\STAGE\Github\AOC\for git aoc\AOC++\thread_iXon.cpp(1122,27): warning C4305: '=' : troncation de 'double' à 'float'
+C:\Users\lucas\Documents\STAGE\Github\AOC\for git aoc\AOC++\thread_iXon.cpp(379): warning C4715: 'CallWaitForAcquisitionTimeout' : les chemins de contrôle ne retournent pas tous une valeur
+C:\Users\lucas\Documents\STAGE\Github\AOC\for git aoc\AOC++\thread_iXon.cpp(392): warning C4715: 'CallGetLastNumberImages' : les chemins de contrôle ne retournent pas tous une valeur
+  AOC++.vcxproj -> C:\Users\lucas\Documents\STAGE\Github\AOC\for git aoc\x64\Debug\AOC++.exe

@@ -51,6 +51,8 @@ extern HANDLE						hThread_EvtWatch;
 
 extern IMAGE						*SHM_imarray;		// pointer to image
 
+extern int							localCount;
+
 #pragma comment(lib,"atmcd64m.lib")
 
 using namespace std;
@@ -74,6 +76,7 @@ mcINT16 StartThread_iXon()
 	TP_iXon.hLiveStream = CreateEvent(NULL,FALSE,FALSE,NULL);
 	TP_iXon.hExt_StatsUpdate = TP_EvtWatch.hStatsUpdate;
 	TP_iXon.hExt_MissedFrame = TP_EvtWatch.hMissedFrame;
+	TP_iXon.hGetLastImage = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	// THREAD VARIABLE INITIALIZATION
 	//TP_iXon.FPSinterval = 1000;
@@ -90,6 +93,10 @@ mcINT16 StartThread_iXon()
 
 	TP_iXon.nCalFrames = 0;
 	TP_iXon.bCalibration = false;
+
+	TP_iXon.testLocalCount = 0;
+
+	TP_iXon.vImgBuffer.resize(TP_calcSH.DX * TP_calcSH.DY);
 
 	hThread_iXon = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)Thread_iXon,&TP_iXon,THREAD_PRIORITY_ABOVE_NORMAL,&Thread_iXon_ID);
 
@@ -190,7 +197,7 @@ mcINT16 StartThread_Simu_iXon()
 	TP_Simu_iXon.bEndThread = false;
 	TP_Simu_iXon.WaitTimeout = INFINITE;
 	TP_Simu_iXon.currentIndex = 0;
-	TP_Simu_iXon.fitsDir = "C:\\Users\\lucas\\Documents\\STAGE\\FITS\\";
+	TP_Simu_iXon.fitsDir = "C:\\Users\\lucas\\Documents\\STAGE\\FITS\\simu_square_2\\";
 
 	hThread_Simu_iXon = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Thread_Simu_iXon, &TP_Simu_iXon, THREAD_PRIORITY_ABOVE_NORMAL, &Thread_Simu_iXon_ID);
 
@@ -269,7 +276,7 @@ void Simulation(ThreadParams_Simu_iXon* param)
 {
 	SHM_imarray[0].md[0].write = 1;
 	std::copy(SimulationLoader::getInstance().get(param->currentIndex).begin(),
-		SimulationLoader::getInstance().get(param->currentIndex).end(), (long*)SHM_imarray[0].array.SI32);
+		SimulationLoader::getInstance().get(param->currentIndex).end(), TP_iXon.vImgBuffer.begin());
 	if (SimulationLoader::getInstance().get(param->currentIndex).size() == 0)
 		cout << "non" << endl;
 	//cout << param->currentIndex << endl;
@@ -278,7 +285,8 @@ void Simulation(ThreadParams_Simu_iXon* param)
 	param->currentIndex++;
 	if (param->currentIndex >= param->maxImages)
 		param->currentIndex = 0;
-	SHM_imarray[0].md[0].cnt0++;
+	param->imgCount++;
+	//SHM_imarray[0].md[0].cnt0++;
 }
 
 mcUINT32 Thread_Simu_iXon(void *pParam)
@@ -342,7 +350,7 @@ mcUINT32 Thread_Simu_iXon(void *pParam)
 		{
 			QueryPerformanceCounter(&li_t1);
 			dt = double((li_t1.QuadPart - li_t0.QuadPart)) * tick_period_microsecond;
-			while (dt <= 500) {
+			while (dt <= TP_iXon.expTime_s * 1000000) {
 				QueryPerformanceCounter(&li_t1);
 				dt = double((li_t1.QuadPart - li_t0.QuadPart)) * tick_period_microsecond;
 			}
@@ -386,9 +394,9 @@ mcINT16 CallGetLastNumberImages(ThreadParams_Simu_iXon* param, ThreadParams_iXon
 mcINT16 GetSimuLastImage(ThreadParams_iXon* param)
 {
 	DWORD timeout = param->expTime_s < 0.0005 ? 1 : DWORD(2 * param->expTime_s * 1000);
-	/*if (WaitForSingleObject(param->hGetLastImage, timeout) == WAIT_OBJECT_0)
+	if (WaitForSingleObject(param->hGetLastImage, timeout) == WAIT_OBJECT_0)
 		return SUCCESS;
-	else*/
+	else
 		return SERIOUS;
 }
 
@@ -409,6 +417,7 @@ void* AcquireLoop(ThreadParams_iXon *param)
 	double ifrate = 0.;              // frame rate (average over nfr frames)
 	double itiming = 0.;
 	int local_count = 0;
+	localCount = 0;
 	int full_count = 0;
 	//struct mytimespec now;       // clock readout
 	//struct tm* ptm;
@@ -455,7 +464,7 @@ void* AcquireLoop(ThreadParams_iXon *param)
 
 	register double time_diff = 0.;
 
-	vector<long> vImgBuffer(imgSize);
+	param->vImgBuffer.resize(imgSize);
 
 	// TAKE A FIRST IMAGE TO RECORD THE COUNTER
 	GetNumberNewImages(&first_im, &last_im);
@@ -494,24 +503,24 @@ void* AcquireLoop(ThreadParams_iXon *param)
 				GetSimuLastImage(param);
 			}
 			else {
-				error = GetMostRecentImage(&vImgBuffer[0], imgSize);
+				error = GetMostRecentImage(&param->vImgBuffer[0], imgSize);
 			}
 
 			if (param->bAsyncProc == true)
 			{
 				if (TryEnterCriticalSection(&param->CSCopyImgBuffer) == TRUE)
 				{
-					std::copy(vImgBuffer.begin(),vImgBuffer.end(),param->vImgBufferCopy.begin());
+					std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),param->vImgBufferCopy.begin());
 				}
 			}
 			else
 			{
 				// FOR TEST PURPOSE!!!!
-				std::copy(vImgBuffer.begin(),vImgBuffer.end(),param->vImgBufferCopy.begin());
+				std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),param->vImgBufferCopy.begin());
 
 				// SHARED MEMORY DISPLAY IMAGE BUFFER
 				SHM_imarray[0].md[0].write = 1;				// signal you are about to write
-				std::copy(vImgBuffer.begin(),vImgBuffer.end(),(long*)SHM_imarray[0].array.SI32);
+				std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),(long*)SHM_imarray[0].array.SI32);
 
 				retVal = AOC_ProcessSHData(param);
 				QueryPerformanceCounter(&li_t2);
@@ -576,6 +585,7 @@ void* AcquireLoop(ThreadParams_iXon *param)
 				//printf("count, time_diff, FPS >> %d %.3e %.3f\n",count,time_diff * iFreq/count,param->FPS);
 				time_diff = 0.;
 				local_count = 0;
+				localCount = 0;
 			}
 		}
 
@@ -599,6 +609,13 @@ void* AcquireLoop(ThreadParams_iXon *param)
 			//WaitForAcquisition();
 			//GetNumberNewImages(&first_im, &last_im);
 
+			if (param->bSimulation) {
+				GetSimuLastImage(param);
+			}
+			else {
+				error = GetMostRecentImage(&param->vImgBuffer[0], imgSize);
+			}
+
 			delta = last_im - last_read_im;
 			if (delta > 1)
 			{
@@ -607,29 +624,22 @@ void* AcquireLoop(ThreadParams_iXon *param)
 			}
 			last_read_im = last_im;
 		
-			if (param->bSimulation) {
-				GetSimuLastImage(param);
-			}
-			else {
-				error = GetMostRecentImage(&vImgBuffer[0], imgSize);
-			}
-
 
 			if (param->bAsyncProc == true)
 			{
 				if (TryEnterCriticalSection(&param->CSCopyImgBuffer) == TRUE)
 				{
-					std::copy(vImgBuffer.begin(),vImgBuffer.end(),param->vImgBufferCopy.begin());
+					std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),param->vImgBufferCopy.begin());
 				}
 			}
 			else
 			{
 				// FOR TEST PURPOSE!!!!
-				std::copy(vImgBuffer.begin(),vImgBuffer.end(),param->vImgBufferCopy.begin());
+				std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),param->vImgBufferCopy.begin());
 
 				// SHARED MEMORY DISPLAY IMAGE BUFFER
 				SHM_imarray[0].md[0].write = 1;				// signal you are about to write
-				std::copy(vImgBuffer.begin(),vImgBuffer.end(),(long*)SHM_imarray[0].array.SI32);
+				std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),(long*)SHM_imarray[0].array.SI32);
 
 				retVal = AOC_ProcessSHData(param);
 				QueryPerformanceCounter(&li_t2);
@@ -662,12 +672,16 @@ void* AcquireLoop(ThreadParams_iXon *param)
 
 			++full_count;
 			++local_count;
+			param->testLocalCount++;
+			localCount++;
 
 			QueryPerformanceCounter(&li_t2);
 			//if (count % TP_iXon.FPSinterval == 0)
 			//if ((double(li_t2.QuadPart - li_prev.QuadPart) * iFreq) >= param->display_image_interval_s)
 
-			if (local_count >= param->display_image_count)
+			cout << "ixon simu: " << localCount << endl;
+
+			if (localCount >= param->display_image_count)
 			{
 				li_prev = li_t2;
 				param->FPS = double(full_count) / (double(li_t2.QuadPart - li_t0.QuadPart) * iFreq);
@@ -679,6 +693,7 @@ void* AcquireLoop(ThreadParams_iXon *param)
 				//printf("count, time_diff, FPS >> %d %.3e %.3f\n",count,time_diff * iFreq/count,param->FPS);
 				time_diff = 0.;
 				local_count = 0;
+				localCount = 0;
 			}
 		}
 	}
@@ -1158,7 +1173,7 @@ mcINT16 AOC_ProcessSHData(ThreadParams_iXon *param)
 	double bkg = 0.;
 
 	// USED FOR THRESHOLD DETERMINATION ONLY ==> THRESHOLD SETTING CAN BE DONE BY PYTHON CODE (SLOW/ARBITRARY/USER CHANGES)
-	if (false)
+	if (true)
 	{
 		// COMPUTE MEAN
 		vector<double> mom;

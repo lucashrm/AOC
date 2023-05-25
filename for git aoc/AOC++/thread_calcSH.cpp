@@ -63,6 +63,10 @@ extern vector<int>				vDMSquare2DMmap;
 	// VALID SUBAPERTURE INDEX
 extern vector<int>				vSH_ValidCell;
 
+extern int						localCount;
+
+MCODE_Export_FITS FITS;
+
 
 LARGE_INTEGER t0;
 LARGE_INTEGER t1;
@@ -111,7 +115,9 @@ static inline int calc_SH_data_mt(int threadID, int sizex, int sizey, long *vImg
 
 	//printf("[%d] nsub: %d %x %x %x %x %x %x %x\n", threadID, nsub, v_xx, v_yy, v_indx, v_indy, SH_xtmp, SH_ytmp, SH_phot);
 
-	for (int i=0;i<nsub;++i)
+	int write = 0;
+
+	for (int i = 0; i < nsub; ++i)
 	{
 		ii = v_indx[i];
 		jj = v_indy[i];
@@ -134,34 +140,44 @@ static inline int calc_SH_data_mt(int threadID, int sizex, int sizey, long *vImg
 
 		// FIXME: PRE-COMPUTE SUBAPERTURE INDICES
 		// EXTRACT THE SUBPUPIL DATA FROM ORIGINAL IMAGE
-		sub_arr.resize(xs*ys);
+		sub_arr.resize(xs * ys);
 
 		int ycrd;
 		int ycrd_sa;
-//#pragma omp parallel for
-		for (int v=0;v<size_t(ys);++v)
+		//#pragma omp parallel for
+		for (int v = 0; v < size_t(ys); ++v)
 		{
-			ycrd = (y0+v)*sizex;
-			ycrd_sa = v*xs;
-			for (int u=0;u<size_t(xs);++u)
+			ycrd = (y0 + v) * sizex;
+			ycrd_sa = v * xs;
+			for (int u = 0; u < size_t(xs); ++u)
 			{
-				sub_arr[u + ycrd_sa] = vImg[x0+u + ycrd];
+				sub_arr[u + ycrd_sa] = vImg[x0 + u + ycrd];
 			}
 		}
-			
+
+		/*std::string imagettes = "imagettes" + std::to_string(i);
+		FITS.Save(&sub_arr[0], xs, ys, "R:\\", imagettes);*/
+
+
+		/*for (int a = 0; a != 100; a++) {
+			std::string imagettes = "imagettes" + to_string(a);
+			FITS.Save(&sub_arr[a], , 13, "R:\\", imagettes);
+			a++;
+		}*/
+
 		// FIND THE MAXIMUM VALUE IN THE SUBPUPIL
 		maxval = -INT_MAX;
 		vector<int>::iterator ptr = sub_arr.begin();
 
-//#pragma omp parallel for shared (maxval)
-		for (int k=0;k<xs*ys;++k)
+		//#pragma omp parallel for shared (maxval)
+		for (int k = 0; k < xs * ys; ++k)
 		{
 			if (*ptr > maxval) maxval = *ptr;
-			 ++ptr;
+			++ptr;
 		}
 
 		// LINEAR INDEX OF THE CURRENT SH APERTURE
-		int crd = ii + jj*nx;
+		int crd = ii + jj * nx;
 
 		float xc = 0.f;
 		float yc = 0.f;
@@ -174,13 +190,13 @@ static inline int calc_SH_data_mt(int threadID, int sizex, int sizey, long *vImg
 		// FOR DEBUGGING PURPOSE ONLY!!
 		//thresh = 0.;
 		//================================
-		
+
 		//if (maxval > thresh)
 		if ((v_enabled[i] == 1) && (maxval > v_thresh[i]))
 		{
 			// SUBTRACT MIN
 //#pragma omp parallel for
-			for (int k=0;k<xs*ys;++k)
+			for (int k = 0; k < xs * ys; ++k)
 			{
 				//if (sub_arr[k] < thresh) sub_arr[k] = 0;
 				if (sub_arr[k] < v_thresh[i]) sub_arr[k] = 0;
@@ -194,11 +210,11 @@ static inline int calc_SH_data_mt(int threadID, int sizex, int sizey, long *vImg
 			sum = 0.;
 			float val;
 
-//#pragma omp parallel for reduction(+:xc, yc, sum)
-			for (register int v=0;v<ys;++v)
+			//#pragma omp parallel for reduction(+:xc, yc, sum)
+			for (register int v = 0; v < ys; ++v)
 			{
-				ycrd_sa = v*xs;
-				for (register int u=0;u<xs;++u)
+				ycrd_sa = v * xs;
+				for (register int u = 0; u < xs; ++u)
 				{
 					val = float(sub_arr[u + ycrd_sa]);
 					xc += val * float(u);
@@ -217,16 +233,16 @@ static inline int calc_SH_data_mt(int threadID, int sizex, int sizey, long *vImg
 			}
 			else
 			{
-				xc = float(0.5f * (xs-1));
-				yc = float(0.5f * (ys-1));
+				xc = float(0.5f * (xs - 1));
+				yc = float(0.5f * (ys - 1));
 			}
 
 		}
 		else
 		{
 			// SET TO REF POSITION
-			xc = float(0.5f * (xs-1));
-			yc = float(0.5f * (ys-1));
+			xc = float(0.5f * (xs - 1));
+			yc = float(0.5f * (ys - 1));
 			sum = 0.f;
 		}
 
@@ -238,9 +254,24 @@ static inline int calc_SH_data_mt(int threadID, int sizex, int sizey, long *vImg
 		SH_ytmp[crd] = float(yc);
 		SH_slope_x[crd] = SH_xtmp[crd] - SH_refx[crd];
 		SH_slope_y[crd] = SH_ytmp[crd] - SH_refy[crd];
+		//cout << "crd, sh_slope_x sh_slope_y: " << crd << " " << SH_slope_x[crd] << " " << SH_slope_y[crd] << endl;
 		SH_phot[crd] = float(sum);
-	}
+		//cout << "image " << i << " x y " << xc << " " << yc << " " << SH_slope_x[crd] << " " << SH_slope_y[crd] << endl;
+		/*if (write == 0) {
+			ofstream file;
+			file.open("C:\\Users\\lucas\\Documents\\STAGE\\Misc\\data_aoc_slopes.txt", fstream::app);
+			if (!file) {
+				cout << "cant open file" << endl;
+			}
+			else {
+				file << SH_slope_x[crd] << " " << SH_slope_y[crd] << endl;
+			}
+			file.close();
 
+		}
+		if (i >= 99)
+			write = 1;*/
+	}
 	//QueryPerformanceCounter(&t1);
 	//printf("Execution time [%d]: %.3e\n",threadID, double(t1.QuadPart - t0.QuadPart) / double(liFreq.QuadPart));
 
@@ -560,11 +591,13 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 	case WAIT_OBJECT_0:
 	{
 		int nSubAp = TP_calcSH.nx*TP_calcSH.ny;
-		int mod_counter = TP_calcSH.local_counter % TP_calcSH.display_image_count;
+		int mod_counter = localCount % TP_calcSH.display_image_count;
 
 		// ===============================================================================
 		// ===============================================================================
 		// ============================================== PUT THE SLOPE ANALYSIS CODE HERE
+
+		cout << "calcSH: " << localCount << "and mod counter: " << mod_counter << endl;
 
 		if (TP_calcSH.bCalMode == false)
 		{
@@ -643,7 +676,7 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 
 			bTriggerDisplay = mod_counter != 0 ? false : true;
 
-			if ((TP_calcSH.local_counter % TP_calcSH.nCalFrameCount) == 0)
+			if ((localCount % TP_calcSH.nCalFrameCount) == 0)
 			{
 				SetEvent(TP_calcSH.hOut_SingleModeDone);
 			}

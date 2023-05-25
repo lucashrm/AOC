@@ -460,6 +460,8 @@ float					leakage_gain;
 
 vector<int>				vDMSquare2DMmap;
 
+int						localCount;
+
 mcINT16 concat_quoted_string_items(string& output, vector<string> vItem, int imin = -1, int imax = -1, bool bKeepQuotes = false)
 {
 	if (imin == -1)
@@ -744,6 +746,7 @@ void main_loop()
 								{
 									//cconf->babort = true;
 									SetEvent(TP_iXon.hStopAcquisition);
+									SetEvent(TP_Simu_iXon.hStopLiveStream);
 									if (WaitForSingleObject(TP_iXon.hAcquisitionDone,5000) == WAIT_TIMEOUT)
 									{
 										cout << string_format("TIMEOUT while waiting for acquisition routine to terminate\n");
@@ -1471,6 +1474,25 @@ void main_loop()
 								{
 									cout << "simulaton off" << endl;
 									TP_iXon.bSimulation = false;
+								}
+							}
+							else if (compare_no_case(cmdStr, "change_directory") == 0)
+							{
+								if (vItem.size() != 3)
+								{
+									cout << string_format("Incorrect number of parameters (1 required). Nothing done.\n");
+									break;
+								}
+								else {
+									SetEvent(TP_Simu_iXon.hStopLiveStream);
+									SetEvent(TP_iXon.hStopAcquisition);
+									Sleep(50);
+									SimulationLoader::getInstance().emptyValues();
+									SimulationLoader::getInstance().loadFullRepo(vItem[2] + '/');
+									TP_Simu_iXon.maxImages = SimulationLoader::getInstance().getAllValues().size();
+									TP_Simu_iXon.currentIndex = 0;
+									SetEvent(TP_iXon.hStartAcquisition);
+									SetEvent(TP_Simu_iXon.hStartLiveStream);
 								}
 							}
 							else if (compare_no_case(cmdStr, "set_ZER_gain") == 0)

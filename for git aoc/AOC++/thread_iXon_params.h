@@ -53,6 +53,7 @@ typedef struct
 	int				acqTimeout_ms;
 	int				tempMin;
 	int				tempMax;
+	int				testLocalCount;
 
 	// ACQUISITION LOOP WORING MODE (CALIBRATION, CLOSED LOOP, LIVE CAMERA)
 	//bool			bCalMode;
@@ -78,6 +79,8 @@ typedef struct
 	// THREAD VARIABLES
 	bool			bEndThread;
 	DWORD			WaitTimeout;
+
+	vector<long> vImgBuffer;
 
 	//DWORD			curFrame;
 	DWORD			lastFrame;
@@ -133,7 +136,7 @@ public:
 			while ((ent = readdir(dir)) != NULL) {
 				string filename(ent->d_name);
 				if (filename.substr(filename.find_last_of(".") + 1) == "fits") {
-					add(filename);
+					add(repoPath + filename);
 				}
 			}
 			closedir(dir);
@@ -149,11 +152,13 @@ public:
 		vector<long> vBuffer;
 		vector<int> vSize;
 
-		string test = "C:\\Users\\lucas\\Documents\\STAGE\\FITS\\" + filepath;
+		string test = filepath;
 		if (FITS.Load(test, vBuffer, vSize) != SUCCESS) {
 			cout << "Error when loading fits in simulation loader" << endl;
 		}
-
+		else {
+			cout << test << " successfully load" << endl;
+		}
 		_values.push_back(vBuffer);
 	}
 
