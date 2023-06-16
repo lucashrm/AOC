@@ -435,6 +435,7 @@ IMAGE				*SHM_Slopes;			// SHARED MEMORY N FRAMES HISTORY DATA (DISPLAY RATE)
 IMAGE				*SHM_RefCent;			// SHARED MEMORY REFERENCE CENTROIDS DATA
 IMAGE				*SHM_DM_slope_mask;		// SHARED MEMORY PUPIL MASK DATA
 IMAGE				*SHM_ModesInfo;			// SHARED MEMORY MODE INFORMATION
+IMAGE				*SHM_Timestamps;        // SHARED MEMORY TIMESTAMPS
 vector<IMAGE*>		vSHM_DM_BUFFERS;		// SHARED MEMORY CONTAINING DM MAPS SEPARATE CHANNELS
 
 vector<acs::Scalar>	vDM_cmd;
@@ -722,7 +723,9 @@ void main_loop()
 									TP_calcSH.vModesDataHist.resize(TP_calcSH.display_image_count*TP_calcSH.MaxModes);
 
 									vector<float> vtmp(TP_calcSH.display_image_count*TP_calcSH.nx*TP_calcSH.ny*TP_calcSH.nDataSets, 0.f);
+									vector<double> vtimestamptmp(TP_calcSH.display_image_count * 50, 0);
 									TP_calcSH.vCircBuf_FlatSHData.resize(TP_calcSH.nCircBuffers, vtmp);
+									TP_calcSH.vCircBuf_Timestamps.resize(TP_calcSH.nCircBuffers, vtimestamptmp);
 
 									TP_calcSH.circBufCounter = 0;
 									TP_calcSH.local_counter = 0;
@@ -2074,8 +2077,10 @@ int main(int argc, char *argv[])
 	vTimeStamp.resize(MAX_BUFFER_HISTORY_LENGTH, long long(0));
 
 	vector<float> vtmp(TP_iXon.display_image_count*TP_calcSH.nx*TP_calcSH.ny*TP_calcSH.nDataSets, 0.f);
+	vector<double> vtimestamptmp(TP_iXon.display_image_count * 50, 0);
 	TP_calcSH.nCircBuffers = 2;
 	TP_calcSH.vCircBuf_FlatSHData.resize(TP_calcSH.nCircBuffers, vtmp);
+	TP_calcSH.vCircBuf_Timestamps.resize(TP_calcSH.nCircBuffers, vtimestamptmp);
 	TP_calcSH.circBufCounter = 0;
 
 	// 
@@ -2139,6 +2144,19 @@ int main(int argc, char *argv[])
 	shared		= 1;					// image will be in shared memory
 	NBkw		= 2;					// allocate space for 2 keywords
 	ImageCreate(&SHM_ModesInfo[0], "modes_info", naxis, imsize, atype, shared, NBkw);
+
+
+	// SET THE SHARED MEMORY BUFFER FOR TIMESTAMP
+	naxis = 2;							// 2D image
+	SHM_Timestamps = (IMAGE*)malloc(sizeof(IMAGE));
+	imsize[0] = 50 * TP_calcSH.nDataSets;	// image dimensions.
+	imsize[1] = 500;					// MAXIMUM HISTORY BUFFER SIZE
+	atype = _DATATYPE_DOUBLE;		// camera SDK writes "int"
+	shared = 1;					// image will be in shared memory
+	NBkw = 2;					// allocate space for 2 keywords
+	ImageCreate(&SHM_Timestamps[0], "timestamps", naxis, imsize, atype, shared, NBkw);
+
+
 
 	//SetEvent(TP_DataLogger.hStartLog);
 

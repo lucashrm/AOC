@@ -80,7 +80,7 @@ typedef struct
 	bool			bEndThread;
 	DWORD			WaitTimeout;
 
-	vector<long> vImgBuffer;
+	vector<long>				vImgBuffer;
 
 	//DWORD			curFrame;
 	DWORD			lastFrame;
@@ -109,6 +109,7 @@ typedef struct {
 
 	// SIGNALING EVENTS
 	HANDLE			hLiveStreamDone;
+	HANDLE			hMissedFrame;
 
 	// THREAD VARIABLES
 	bool bEndThread;
@@ -116,6 +117,7 @@ typedef struct {
 	int maxImages;
 	int currentIndex;
 	unsigned int imgCount;
+	bool isMissed;
 
 	string fitsDir;
 } ThreadParams_Simu_iXon;

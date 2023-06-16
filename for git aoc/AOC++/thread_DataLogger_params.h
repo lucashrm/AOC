@@ -27,6 +27,7 @@ typedef struct
 	size_t			dataBlockSize;
 	size_t			dataLineSize;
 	vector<vector<float>>	vLogBufferDataSH;
+	vector<vector<double>>	vLogBufferTimestamps;
 
 	size_t			LoggerCounter;
 	size_t			circBufferLoggerCounter;
@@ -57,7 +58,7 @@ typedef struct _ThreadParams_DataSaver
 	_ThreadParams_DataSaver()
 	{
 		// CONSTRUCTOR
-		strLogDir = "D:\\DATA_AOC\\";
+		strLogDir = "C:\\Users\\lucas\\Documents\\STAGE\\Misc\\log\\";
 		strLogBasename = "AOC_Log";
 		strLogDate = "YYYY.MM.DDTHRhMnmSS.mmms";
 	};

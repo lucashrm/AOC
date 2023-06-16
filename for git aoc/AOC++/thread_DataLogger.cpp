@@ -126,7 +126,9 @@ static DWORD Thread_DataLogger(void* pParam)
 			size_t logSize = param->dataLineSize*param->dataBlockSize*param->nBlocksToLog;
 			size_t blockSize = param->dataLineSize*param->dataBlockSize;
 			vector<float> vTmp(param->dataLineSize*param->dataBlockSize*param->nBlocksToLog);
+			vector<double> vTmpL(param->dataLineSize * param->dataBlockSize * param->nBlocksToLog);
 			param->vLogBufferDataSH.resize(param->nCircBuf, vTmp);
+			param->vLogBufferTimestamps.resize(param->nCircBuf, vTmpL);
 
 			TP_DataLogger.LoggerCounter = 0;
 			size_t blockCounter = 0;
@@ -150,6 +152,8 @@ static DWORD Thread_DataLogger(void* pParam)
 				case WAIT_OBJECT_0+1:
 					std::copy(TP_calcSH.vCircBuf_FlatSHData[param->circBufferCalcSHCounter].begin(), TP_calcSH.vCircBuf_FlatSHData[param->circBufferCalcSHCounter].end(),
 						&param->vLogBufferDataSH[param->circBufferLoggerCounter][blockCounter*blockSize]);
+					std::copy(TP_calcSH.vCircBuf_Timestamps[param->circBufferCalcSHCounter].begin(), TP_calcSH.vCircBuf_Timestamps[param->circBufferCalcSHCounter].end(),
+						&param->vLogBufferTimestamps[param->circBufferLoggerCounter][blockCounter * blockSize]);
 					break;
 				}
 
@@ -336,10 +340,18 @@ static DWORD Thread_DataSaver(void* pParam)
 			param->strFilename = string_format("%s_%s_%04d", param->strLogDate.data(), param->strLogBasename.data(), 
 				param->TP_DataLogger->LoggerCounter);
 
+			std::string strFilenameT = string_format("%s_%s_%04d", param->strLogDate.data(), "_timestamp",
+				param->TP_DataLogger->LoggerCounter);
+
 			cout << string_format("DataSaver saved file '%s' to folder '%s'.\n", param->strFilename.data(), param->strLogDir.data());
+			
 
 			ThreadParams_DataLogger& TPDL = *param->TP_DataLogger;
-			param->FITS.Save(&TPDL.vLogBufferDataSH[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize*TPDL.nBlocksToLog, param->strLogDir, param->strFilename);
+
+			if (param->FITS.Save(&TPDL.vLogBufferDataSH[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize*TPDL.nBlocksToLog, param->strLogDir, param->strFilename) != 0)
+				cout << "Couldn't log data sh" << endl;
+			if (param->FITS.Save(&TPDL.vLogBufferTimestamps[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize * TPDL.nBlocksToLog, param->strLogDir, strFilenameT) != 0)
+				cout << "Couldn't log timestamps" << endl;
 			
 			break;
 		}

@@ -49,6 +49,7 @@ extern IMAGE				*SHM_RefCent;			// SHARED MEMORY REFERENCE CENTROIDS DATA
 extern IMAGE				*SHM_DM_slope_mask;		// SHARED MEMORY PUPIL MASK DATA
 extern IMAGE				*SHM_DM_state;			// SHARED MEMORY DM STATE
 extern IMAGE				*SHM_ModesInfo;			// SHARED MEMORY MODE INFORMATION
+extern IMAGE				*SHM_Timestamps;        // SHARED MEMORY TIMESTAMPS
 extern vector<IMAGE*>		vSHM_DM_BUFFERS;		// SHARED MEMORY
 
 extern vector<vector<float>>	vDM_cmd_buffers;		// DM CORRECTION BUFFERS (N_DM_COMMAND_MAPS x nAct)
@@ -403,7 +404,6 @@ mcINT16 set_thread_params(int threadID, int _nsub, vector<int>& _v_xx, vector<in
 	size_t index = size_t(TP_calcSH.nx*TP_calcSH.ny / TP_calcSH.nThreads * threadID);
 	TP_calcSH.vTP_CalcSHData[threadID].vThresh = &_vThresh[index];
 	TP_calcSH.vTP_CalcSHData[threadID].vEnabled = &_vEnabled[index];
-
 	return 0;
 }
 
@@ -470,6 +470,9 @@ mcINT16 StartThread_calcSH(int _nThreads, int _DX, int _DY, int _nx, int _ny)
 	TP_calcSH.vThreadHandles.resize(TP_calcSH.nThreads);
 	TP_calcSH.vThresh.resize(TP_calcSH.nThreads);
 	TP_calcSH.vThread_CalcSHDataID.resize(TP_calcSH.nThreads);
+
+	TP_calcSH.timestamp.resize(50);
+
 	vector<HANDLE> vCreationEvents(TP_calcSH.nThreads);
 
 	DWORD waitResult;
@@ -583,6 +586,15 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 
 	bool bTriggerDisplay = false;
 
+	LARGE_INTEGER li_t0;
+	LARGE_INTEGER li_t1;
+	double pc_freq = 0.;
+	double pc_start = 0.;
+
+	double tick_period_microsecond = 1. / double(liFreq.QuadPart) * 1.e6;
+
+	QueryPerformanceCounter(&li_t0);
+
 	int waitResult = WaitForMultipleObjects(nEvents,&vWaitEvent[0],TRUE,5000);
 	// AT THIS POINT, ALL THE SLOPES HAVE BEEN FRESHLY COMPUTED
 
@@ -592,12 +604,24 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 	{
 		int nSubAp = TP_calcSH.nx*TP_calcSH.ny;
 		int mod_counter = localCount % TP_calcSH.display_image_count;
+		QueryPerformanceCounter(&li_t1);
 
+		double t = ((li_t1.QuadPart - li_t0.QuadPart) * tick_period_microsecond) / liFreq.QuadPart;
+
+		TP_calcSH.timestamp[mod_counter] = li_t1.QuadPart;
+
+		if (mod_counter != 0) {
+			double test_allez = (TP_calcSH.timestamp[mod_counter] - TP_calcSH.timestamp[mod_counter - 1]) / 10000000;
+			//cout << "valeur test de la diff: " << test_allez << endl;
+		}
+
+
+		//cout << timestamp[mod_counter] << " " << mod_counter << endl;
 		// ===============================================================================
 		// ===============================================================================
 		// ============================================== PUT THE SLOPE ANALYSIS CODE HERE
 
-		cout << "calcSH: " << localCount << "and mod counter: " << mod_counter << endl;
+		//cout << "calcSH: " << localCount << "and mod counter: " << mod_counter << endl;
 
 		if (TP_calcSH.bCalMode == false)
 		{
@@ -638,11 +662,16 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 2)]	,&TP_calcSH.vSH_slope_x[0],sizeof(float)*nSubAp);
 		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 3)]	,&TP_calcSH.vSH_slope_y[0],sizeof(float)*nSubAp);
 		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 4)]	,&TP_calcSH.vSH_phot[0],sizeof(float)*nSubAp);
+		std::memcpy(&TP_calcSH.vCircBuf_Timestamps[bufNum][50 * mod_counter], &TP_calcSH.timestamp[0], sizeof(double)*50);
+
 
 		TP_DataLogger.circBufferCalcSHCounter = bufNum;
 		SetEvent(TP_DataLogger.hDataBlockAvailable);
 
+		//cout << TP_calcSH.local_counter % TP_calcSH.display_image_count << " " << mod_counter << endl;
+
 		++TP_calcSH.local_counter;
+		
 		
 		if (TP_calcSH.bCalMode == false)
 		{
@@ -676,16 +705,20 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 
 			bTriggerDisplay = mod_counter != 0 ? false : true;
 
-			if ((localCount % TP_calcSH.nCalFrameCount) == 0)
-			{
-				SetEvent(TP_calcSH.hOut_SingleModeDone);
-			}
+			//if ((localCount % TP_calcSH.nCalFrameCount) == 0)
+			//{
+			//	SetEvent(TP_calcSH.hOut_SingleModeDone);
+			//}
 		}
 
 		if (bTriggerDisplay == true)
 		{
-			// WHEN THE NUMBER OF ACQUIRED DATA SETS EQUALS TP_calcSH.display_image_count THEN TRANSFER THE DATA BLOCK TO THE SHARED MEMORY 
+			// WHEN THE NUMBER OF ACQUIRED DATA SETS EQUALS TP_calcSH.display_image_c	ount THEN TRANSFER THE DATA BLOCK TO THE SHARED MEMORY 
 			//std::copy(TP_calcSH.vFlatSHData.begin(),TP_calcSH.vFlatSHData.end(),(float*)SHM_Slopes[0].array.F);
+			
+			//timestamp.clear();
+			//std::copy(TP_calcSH.timestamp.begin(), TP_calcSH.timestamp.end(), (long long *)SHM_Timestamps[0].array.D);
+			std::copy(TP_calcSH.vCircBuf_Timestamps[bufNum].begin(), TP_calcSH.vCircBuf_Timestamps[bufNum].end(), SHM_Timestamps[0].array.D);
 			std::copy(TP_calcSH.vCircBuf_FlatSHData[bufNum].begin(),TP_calcSH.vCircBuf_FlatSHData[bufNum].end(),(float*)SHM_Slopes[0].array.F);
 			std::copy(TP_calcSH.vModesDataHist.begin(),TP_calcSH.vModesDataHist.end(),(float*)SHM_ModesInfo[0].array.F);
 			std::copy(vDM_cur_cmd.begin(),vDM_cur_cmd.end(),(float*)SHM_DM_state[0].array.F);

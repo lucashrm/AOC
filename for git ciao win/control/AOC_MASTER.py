@@ -12,7 +12,7 @@ from xaosim.QtMain import QtMain, QApplication
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QThread, Qt
 from PyQt5.QtWidgets import QLabel, QFileDialog, QWidget, QVBoxLayout
-from PyQt5.QtGui import QImage, QPainter, QPen, QBrush
+from PyQt5.QtGui import QImage, QPainter, QPen, QBrush, QGuiApplication
 
 import ctypes
 import _ctypes
@@ -767,6 +767,8 @@ class MyWindow(QtWidgets.QMainWindow):
         self.shm_modes = shm("R:\\modes_info.im.shm",packed=False,verbose=False)
         self.shm_LOmodes = shm('R:\\DM_Buffer_02.im.shm', verbose=False)
         self.shm_HOmodes = shm('R:\\DM_Buffer_03.im.shm', verbose=False)
+        self.shm_timestamps = shm('R:\\timestamps.im.shm', verbose=False)
+
 
         self.pB_WFS_off.clicked.connect(self.wfs_stop)
         self.pB_WFS_on.clicked.connect(self.wfs_start)
@@ -816,6 +818,8 @@ class MyWindow(QtWidgets.QMainWindow):
         # self.pB_StopSimulation.clicked.connect(self.stop_simulation)
 
         self.chB_Simulation.stateChanged[int].connect(self.set_simulation)
+        self.pB_selectDirectory.clicked.connect(self.select_directory)
+
 
         self.chB_TCSOffload.stateChanged[int].connect(self.TCSOffload)
         self.check_InvertX.stateChanged[int].connect(self.OffloadInvertX)
@@ -961,9 +965,9 @@ class MyWindow(QtWidgets.QMainWindow):
 
         # self.mycam.send_fifo_cmd(b'alpao load_flat \"C:\\Users\\AOC\\bin\\alpao_flat.fits\"')
         self.mycam.send_fifo_cmd(b'alpao load_flat \"C:\\Users\\AOC\\bin\\zygo_flat_97.fits\"')
-        
+
         self.mycam.send_fifo_cmd(b'alpao load_map \"C:\\Users\\AOC\\bin\\flat_map_correction_97.fits\" 5')
-        
+
         self.nSubAps = (self.dms-1)*(self.dms-1)
         print('self.nSubAps >> ', self.nSubAps)
 
@@ -991,8 +995,8 @@ class MyWindow(QtWidgets.QMainWindow):
             self.vSubApEnable = np.array(fits.getdata(self.subaps_enabled_file)).astype(np.int32)
         else:
             print('=> No previous enabled subaperture file found (using default values).')
-        
-        # WRITE THE FILE FOR THE IXON SERVER TO KNOW ABOUT THE THRESHOLDS        
+
+        # WRITE THE FILE FOR THE IXON SERVER TO KNOW ABOUT THE THRESHOLDS
         fits.writeto('R:\\ixon_subaperture_thresholds.fits',self.vSubApThresh,overwrite=True)
         fits.writeto('R:\\ixon_subaperture_enabled.fits',self.vSubApEnable,overwrite=True)
 
@@ -1016,6 +1020,8 @@ class MyWindow(QtWidgets.QMainWindow):
         # self.zoffsets_win.show()
 
         self.bInitDone = True
+
+        self.read_imagettes()
 
     def streamCam(self):
         self.combo_CameraMode.setEnabled(False)
@@ -1263,6 +1269,17 @@ class MyWindow(QtWidgets.QMainWindow):
             self.mycam.send_fifo_cmd(b'system simulation OFF')
             print("system simulation off")
 
+    def select_directory(self):
+        directory = QFileDialog()
+        directory.setFileMode(QFileDialog.DirectoryOnly)
+        directory_path = directory.getExistingDirectoryUrl(self, 'C:\\Users\\lucas\\Documents\\STAGE\\FITS\\')
+        if directory_path:
+            print(directory_path.path())
+            path = directory_path.path()[1:]
+            b = bytearray()
+            b.extend(map(ord, path))
+            self.mycam.send_fifo_cmd(b'system change_directory %b' % b)
+
     def stop_simulation(self):
         self.mycam.send_fifo_cmd(b'system simulation OFF')
         print("system simulation off")
@@ -1497,6 +1514,43 @@ class MyWindow(QtWidgets.QMainWindow):
 
         self.log("Current pos. set as reference", "blue")
 
+    def read_imagettes(self):
+        for i in range(100):
+            image = fits.getdata('C:\\Users\\lucas\\Documents\\imagettes_fixed\\imagettes' + str(i) + '.fits')
+            xs = len(image[0])
+            ys = len(image)
+            xc = xs / 2
+            yc = ys / 2
+            sum_x_col = 0
+            sum_y_row = 0
+            sum_x = 0
+            sum_y = 0
+            sum_glo = 0
+
+            for x in range(xs):
+                sum_x_col = 0
+                for y in range(ys):
+                    sum_x_col += image[y][x]
+                    sum_glo += image[y][x]
+                sum_x += sum_x_col * x
+           # print("x: ", sum_x / sum_glo, " ", (sum_x / sum_glo) - xc)
+            sum_glo = 0
+            for y in range(ys):
+                sum_y_row = 0
+                for x in range(xs):
+                    sum_y_row += image[y][x]
+                    sum_glo += image[y][x]
+                sum_y += sum_y_row * y
+            slope_x = (sum_x / sum_glo) - xc
+            slope_y = (sum_y / sum_glo) - yc
+            #print("y: ", sum_y / sum_glo, " ", (sum_y / sum_glo) - yc)
+            #print("image ", i, " with sum_y ", sum_y_row)
+            # fichier = open("C:\\Users\\lucas\\Documents\\STAGE\\Misc\\data_python_slopes.txt", "a")
+            # to_write = str(slope_x) + " " + str(slope_y)
+            # fichier.write("\n" + to_write)
+            # fichier.close()
+
+
 
     def wfs_clear_ref(self,):
         ''' ----------------------------------------------------------
@@ -1595,51 +1649,160 @@ class MyWindow(QtWidgets.QMainWindow):
         # nx = int((isz - self.SH_x0) / self.SH_dx + 2)
         nx = self.dms + 1
         self.xx = self.SH_x0 + np.arange(nx-1) * self.SH_dx
+        print('test lucas np arange', np.arange(nx-1))
         if (isz - self.xx[-1] > self.SH_dx/2+2):
             self.xx = np.append(self.xx, isz)
 
         # ny = int((isz - self.SH_y0) / self.SH_dy + 2)
         ny = self.dms + 1
         self.yy = self.SH_y0 + np.arange(ny-1) * self.SH_dy
+        print('test lucas np arange y', np.arange(ny - 1))
         if (isz - self.yy[-1] > self.SH_dy/2+2):
             self.yy = np.append(self.yy, isz)
 
+        self.new_xx = np.zeros(10, dtype=np.int_)
+        self.new_yy = np.zeros(10, dtype=np.int_)
         # DOUBLE THE NUMBER OF ELEMENTS TO DEFINE START AND END CORNER POINTS
         self.pos_xx = np.zeros((2 * nx, 2), dtype=np.int_)
         for i, myx in enumerate(self.xx):
             self.pos_xx[2*i, 0] = myx
             self.pos_xx[2*i, 1] = self.yy[0]
             self.pos_xx[2*i+1, 0] = myx
-            self.pos_xx[2*i+1, 1] = min(self.yy[-1], isz-1) # -1 for display
+            self.pos_xx[2*i+1, 1] = min(self.yy[-1], isz) # -1 for display
 
         self.pos_yy = np.zeros((2 * ny, 2), dtype=np.int_)
         for i, myy in enumerate(self.yy):
             self.pos_yy[2*i,   1] = myy
             self.pos_yy[2*i,   0] = self.xx[0]
             self.pos_yy[2*i+1, 1] = myy
-            self.pos_yy[2*i+1, 0] = min(self.xx[-1], isz-1)
+            self.pos_yy[2*i+1, 0] = min(self.xx[-1], isz)
         print('nx,ny : ',nx,ny)
 
 
         pos = np.append(self.pos_yy, self.pos_xx, axis=0)
         adj = np.arange(2*(nx+ny)).reshape(nx+ny, 2)
 
+        # pos_test_x = [[]]
+        # pos_test_y = [[]]
+        # for jj in range(ny - 2):
+        #     y0, y1 = self.yy[jj], self.yy[jj + 1]
+        #     for ii in range(nx - 2):
+        #         x0, x1 = self.xx[ii], self.xx[ii + 1]
+        #         # pos_test_x[jj].append(x1 - x0)
+        #         # pos_test_y[jj].append(y1 - y0)
+        #         # print("c'est le test x y", pos_test_x, pos_test_y)
+
         self.SH_xx = self.xx
         self.SH_yy = self.yy
+
+        nx = int((isz - self.SH_x0) / self.SH_dx + 2)
+        xx = np.round(self.SH_x0+np.arange(nx-1)*self.SH_dx).astype(int)
+        if (isz - xx[-1] > self.SH_dx/2+2):
+            xx = np.append(xx, isz)
+
+        ny = int((isz - self.SH_y0) / self.SH_dy + 2)
+        yy = np.round(self.SH_y0 + np.arange(ny - 1) * self.SH_dy).astype(int)
+        if (isz - yy[-1] > self.SH_dy / 2 + 2):
+            yy = np.append(yy, isz)
+
+        print(self.SH_xx)
+
+        size_array_x = [[0 for a in range(len(yy) - 1)] for a in range(len(yy) - 1)]
+        size_array_y = [[0 for a in range(len(yy) - 1)] for a in range(len(yy) - 1)]
+
+        for ii in range(0, len(self.SH_yy) - 1):
+            y0, y1 = yy[ii], yy[ii + 1]
+            for jj in range(0, len(self.SH_yy) - 1):
+                x0, x1 = xx[jj], xx[jj + 1]
+                size_xx = x1 - x0
+                size_yy = y1 - y0
+                print(ii)
+                size_array_x[ii][jj] = size_xx
+                size_array_y[ii][jj] = size_yy
+
+        print("size_array_x", size_array_x)
+
+        # pos_xx_new = np.zeros((2 * nx, 2), dtype=np.int_)
+        # for i, myx in enumerate(size_array_x):
+        #     self.pos_xx[2 * i, 0] = myx
+        #     self.pos_xx[2 * i, 1] = self.yy[0]
+        #     self.pos_xx[2 * i + 1, 0] = myx
+        #     self.pos_xx[2 * i + 1, 1] = min(self.yy[-1], isz)  # -1 for display
+        #
+        # pos_yy_new = np.zeros((2 * ny, 2), dtype=np.int_)
+        # for i, myy in enumerate(size_array_y):
+        #     self.pos_yy[2 * i, 1] = myy
+        #     self.pos_yy[2 * i, 0] = self.xx[0]
+        #     self.pos_yy[2 * i + 1, 1] = myy
+        #     self.pos_yy[2 * i + 1, 0] = min(self.xx[-1], isz)
+        #print(self.yy[-1])
+
+        pos_xx_new = np.zeros((2 * nx, 2), dtype=np.int_)
+        print(pos_xx_new)
+        act_pos_x = 0
+        for i in range(len(size_array_x[0])):
+            pos_xx_new[2 * i, 0] = act_pos_x
+            pos_xx_new[2 * i, 1] = self.yy[0]
+            pos_xx_new[2 * i + 1, 0] = act_pos_x
+            pos_xx_new[2 * i + 1, 1] = min(self.yy[-1], isz)
+            self.new_xx[i] = act_pos_x
+            act_pos_x += size_array_x[0][i]
+
+
+        pos_yy_new = np.zeros((2 * ny, 2), dtype=np.int_)
+        print(pos_yy_new)
+        act_pos_y = 128
+        ind = 0
+        for i in reversed(range(len(size_array_y[0]))):
+            self.new_yy[ind] = act_pos_y
+            act_pos_y -= size_array_y[i][0]
+            ind += 1
+
+        act_pos_y = 0
+        for i in range(len(size_array_y[0])):
+            pos_yy_new[2 * i, 1] = act_pos_y
+            pos_yy_new[2 * i, 0] = self.xx[0]
+            pos_yy_new[2 * i + 1, 1] = act_pos_y
+            pos_yy_new[2 * i + 1, 0] = min(self.xx[-1], isz)
+            act_pos_y += size_array_y[i][0]
+
+        print(size_array_y)
+        print(pos_xx_new)
+        # print("test", self.pos_xx)
+
+        new_pos = np.append(pos_yy_new, pos_xx_new, axis=0)
+
+        print("new pos", new_pos)
+
+        print('nx,ny : ', nx, ny)
+
 
         self.vItemValidCells = np.array([])
 
         if self.chB_show_grid.isChecked():
-            print('pos >>',pos)
-            print('adj >>',adj)
+            print('pos >>', pos)
+            print('adj >>', adj)
             self.overlayGrid.setData(pos=pos, adj=adj,
-                                 pen=(255,0,0,255), size=0,
-                                 # symbolPen=None, symbolBrush=None,
-                                 pxMode=False)
+                                     pen=(0, 255, 0), size=0,
+                                     # symbolPen=None, symbolBrush=None,
+                                     pxMode=False)
         else:
-            self.overlayGrid.setData(pos=pos, adj=adj, pen=None, size=0,
-                                 #symbolPen=None, symbolBrush=None,
-                                 pxMode=False)
+            self.overlayGrid.setData(pos=new_pos, adj=adj,
+                                  pen=(255, 0, 0), size=0,
+                                    symbolPen=None, symbolBrush=None,
+                                    pxMode=False)
+
+        # if self.chB_show_grid.isChecked():
+        #     print('pos >>',pos)
+        #     print('adj >>',adj)
+        #     self.overlayGrid.setData(pos=new_pos, adj=adj,
+        #                          pen=(255, 0, 0), size=0,
+        #                          # symbolPen=None, symbolBrush=None,
+        #                          pxMode=False)
+        # else:
+        #     self.overlayGrid.setData(pos=new_pos, adj=adj, pen=None, size=0,
+        #                          #symbolPen=None, symbolBrush=None,
+        #                          pxMode=False)
 
             if len(self.vItemValidCells) > 0:
                 for i in range(len(self.vItemValidCells)):
@@ -1656,7 +1819,6 @@ class MyWindow(QtWidgets.QMainWindow):
         self.mycam.send_fifo_cmd(('system set_leakage_gain ' + str(leakage_gain)).encode())
         self.log("Leakage gain updated = %.4f" % (leakage_gain,), "blue")
 
-    
     # =========================================================
     def refresh_all(self):
         ''' ----------------------------------------------------------
@@ -1667,7 +1829,7 @@ class MyWindow(QtWidgets.QMainWindow):
         to the user.
         ---------------------------------------------------------- '''
         if self.cam_counter < self.shm_cam.get_counter():
-            print(self.shm_cam.get_counter())
+            #print(self.shm_cam.get_counter())
             self.data_cam = np.flipud(self.shm_cam.get_data(check=False, reform=True))
             self.cam_counter = self.shm_cam.get_counter()
             self.imv_raw.setImage(arr2im(self.data_cam.T,
@@ -1675,6 +1837,7 @@ class MyWindow(QtWidgets.QMainWindow):
                                          pwr=self.pwr,
                                          cmap=self.mycmap), border=1)
 
+        self.refresh_wfs_display()
         # -------- GET THE MODES HISTORY FROM SHARED MEMORY
         self.data_modes = (np.asarray(self.shm_modes.get_data(check=False, reform=True, sleepT=0.)))[0:50,0:self.ZER_WFC.nmodes]
         # print('data_modes.shape >> ', self.data_modes.shape)
@@ -1695,7 +1858,7 @@ class MyWindow(QtWidgets.QMainWindow):
             # for k in range(2, self.ZER_WFC.modes.shape[0]):
             #      = np.sum(self.shm_HOmodes * DMact_modes[k*nbAct:(k+1)*nbAct] = tmpModes[k,self.ZER_WFC.DM.vActMapping]
 
-            
+
 
         # GET THE LOW ORDER (TT) COMMAND MAP AND PROJECT IT ON THE TT CALIBRATION MODES TO OBTAIN THE DM TT ABSOLUTE VALUES
         if self.bTCSOffloadInvertX == True:
@@ -1732,8 +1895,8 @@ class MyWindow(QtWidgets.QMainWindow):
             self.vHO_global_amp[k-2] = kw_HO * self.ZER_calAmp
             self.yB[k] = kw_HO
 
-   
-        self.refresh_wfs_display()
+        timestamps = (np.asarray(self.shm_timestamps.get_data(check=False, reform=True, sleepT=0.)))[0:50,:]
+        print((timestamps[0][100] - timestamps[0][99]) / 10000000)
         self.refresh_stats()
 
 
@@ -1774,7 +1937,7 @@ class MyWindow(QtWidgets.QMainWindow):
         reference_pos = np.zeros(((self.dms-1)*(self.dms-1), 2), dtype=np.float32)
         centroid_pos = np.zeros(((self.dms-1)*(self.dms-1), 2), dtype=np.float32)
         slopes = np.zeros(((self.dms-1)*(self.dms-1), 2), dtype=np.float32)
-     
+
         try:
             _ = self.data_slopes.shape
         except:
@@ -1783,44 +1946,71 @@ class MyWindow(QtWidgets.QMainWindow):
 
         # centroid_pos IS ONLY VALID IN DISPLAY SPACE (VIZUALIZATION ONLY!!)
         centroid_pos[:,0] = self.data_slopes[49,0:100]
-        centroid_pos[:,1] = np.flipud(self.data_slopes[49,100:200])
+        centroid_pos[:,1] = self.data_slopes[49,100:200]
         slopes[:,0] = self.data_slopes[49,200:300]
         slopes[:,1] = np.flipud(self.data_slopes[49,300:400])
         # print('reference_pos/ref_centroids shapes >> ',reference_pos.shape,self.ref_centroids.shape)
         reference_pos[:,0] = self.ref_centroids[0:100]
-        reference_pos[:,1] = np.flipud(self.ref_centroids[100:200])
-        flipped_yy = np.flipud(self.yy)
-        for j in range(self.dms-1):
-            for i in range(self.dms-1):
+        reference_pos[:,1] = self.ref_centroids[100:200]
+        # print(reference_pos)
+        flipped_yy = np.flipud(self.new_yy)
+        flipped_xx = np.flipud(self.xx)
+        x = 0
+        y = 0
+        # print("slopes: ", slopes)
+        for j in reversed(range(self.dms-1)):
+            for i in reversed(range(self.dms-1)):
                 crd = i + j*(self.dms-1)
                 # centroid_pos[crd,0] = centroid_pos[crd,0] + self.xx[i]
-                # centroid_pos[crd,1] = centroid_pos[crd,1] + self.yy[j]            
+                # centroid_pos[crd,1] = centroid_pos[crd,1] + self.yy[j]
                 # reference_pos[crd,0] = reference_pos[crd,0] + self.xx[i]
                 # reference_pos[crd,1] = reference_pos[crd,1] + self.yy[j]
-                centroid_pos[crd,0] = centroid_pos[crd,0] + self.xx[i]
-                centroid_pos[crd,1] = -centroid_pos[crd,1] + flipped_yy[j]            
-                reference_pos[crd,0] = reference_pos[crd,0] + self.xx[i]
-                reference_pos[crd,1] = -reference_pos[crd,1] + flipped_yy[j]
-
+                #print(crd, self.new_yy[y])
+                #print(crd,centroid_pos[crd,0] + self.new_xx[i], centroid_pos[crd,1] + self.new_yy[j], self.new_xx[i], self.new_yy[j])
+                centroid_pos[crd,0] = centroid_pos[crd,0] + self.new_xx[i] + 0.5
+                centroid_pos[crd,1] = self.new_yy[j] - centroid_pos[crd, 1] - 0.5
+                reference_pos[crd,0] = reference_pos[crd,0] + self.new_xx[i] + 0.5
+                reference_pos[crd,1] = self.new_yy[j] - reference_pos[crd,1] - 0.5
+                # print(crd, centroid_pos[crd,0], centroid_pos[crd,1])
+                x += 1
+            y += 1
+            x = 0
         # centroid_y = self.data_slopes[49,100:200]
         # centroid_pos = np.append(centroid_y, centroid_x, axis=0)
         # print('reference_pos >> ',centroid_pos[15,0],centroid_pos[15,1])
-
+        dpi = QGuiApplication.primaryScreen().logicalDotsPerInch()
+        screenWidth = QGuiApplication.primaryScreen().size().width()
+        penWidth = max(1, int(1 / (dpi / screenWidth)))
         if self.check_ShowRefPos.isChecked():
             symBrush = pg.mkBrush([255,255,255,127])
+            crossSize = 1
+            customSymbol = QtGui.QPainterPath()
+            customSymbol.moveTo(-crossSize, 0)
+            customSymbol.lineTo(crossSize, 0)
+            customSymbol.moveTo(0, -crossSize)
+            customSymbol.lineTo(0, crossSize)
+            pen = QtGui.QPen(QtGui.QColor(255, 0, 0))
+            pen.setWidth(penWidth)
             self.overlayRefs.setData(pos=reference_pos,
-                                pen=None, symbol ='+', symbolPen=None, symbolBrush=symBrush, symbolsize=50, size=4,
+                                pen=pen, symbol=customSymbol, symbolBrush=None, size=1,
                                 pxMode=False, antialias=True, compositionMode=QtGui.QPainter.CompositionMode.CompositionMode_SourceOver)
         else:
-            self.overlayRefs.setData(pos=reference_pos, 
+            self.overlayRefs.setData(pos=reference_pos,
                                 pen=None, size=0,
                                 pxMode=False, compositionMode=QtGui.QPainter.CompositionMode.CompositionMode_SourceOver)
 
         if self.check_ShowCentroids.isChecked():
-            symBrush = pg.mkBrush([255,0,0,127])
+            crossSize = 1
+            customSymbol = QtGui.QPainterPath()
+            customSymbol.moveTo(-crossSize, -crossSize)
+            customSymbol.lineTo(crossSize, crossSize)
+            customSymbol.moveTo(-crossSize, crossSize)
+            customSymbol.lineTo(crossSize, -crossSize)
+            pen = QtGui.QPen(QtGui.QColor(255, 0, 0))
+            pen.setWidth(penWidth)
             self.overlayCentroids.setData(pos=centroid_pos,
-                                pen=None, symbol ='x', symbolPen=None, symbolBrush=symBrush, symbolsize=10, size=4,
-                                pxMode=False, antialias=True, compositionMode=QtGui.QPainter.CompositionMode.CompositionMode_SourceOver)
+                                pen=pen, symbol=customSymbol, symbolBrush=None, size=1,
+                                pxMode=False, ntialias=True, compositionMode=QtGui.QPainter.CompositionMode.CompositionMode_SourceOver)
         else:
             self.overlayCentroids.setData(pos=centroid_pos,
                                 pen=None, size=0,
@@ -1862,7 +2052,7 @@ class MyWindow(QtWidgets.QMainWindow):
                                     pxMode=False)
             else:
                 self.overlayPupil.setData(pen=None, pxMode=False)
-        else: 
+        else:
             self.overlayPupil.setData(pen=None, pxMode=False)
 
     # =========================================================
@@ -2107,7 +2297,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.RRinv = pinv(self.RR.T, rcond=0.1)
         u, s, vh = np.linalg.svd(self.RR.T, full_matrices=False, compute_uv=True, hermitian=False)
         print('u.shape, s.shape, vh.shape >> ', u.shape, s.shape, vh.shape)
-        self.RRsvd = vh.T.dot(np.diag(1./s).dot(u.T)) 
+        self.RRsvd = vh.T.dot(np.diag(1./s).dot(u.T))
         print('Singular values >> ', s)
         fits.writeto(r'R:\RRinv.fits',self.RRinv,overwrite=True)
         fits.writeto(r'R:\RRsvd.fits',self.RRsvd,overwrite=True)
@@ -2143,7 +2333,7 @@ class MyWindow(QtWidgets.QMainWindow):
             # # self.LogDataCmds = np.zeros([self.log_length,self.nmodes])
             # self.LogDataDMProjModes = np.zeros([self.log_length,self.nmodes])
             # self.LogTimeStamp = np.zeros(self.log_length,dtype='float64')
-            
+
             self.bCloseLoop = True
             # self.ZER_WFC.bApplyCorrection = True
             self.mycam.send_fifo_cmd(b'alpao direct_dm_update ON')
@@ -2322,7 +2512,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.pB_cam_tint_inc.setEnabled(state)
         self.pB_cam_tint_dec.setEnabled(state)
         self.pB_cam_shutdown.setEnabled(state)
-        
+
 
     # =========================================================
     def alpao_shutdown(self):

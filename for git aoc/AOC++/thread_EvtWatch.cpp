@@ -223,7 +223,7 @@ mcUINT32 Thread_EvtWatch(void *pParam)
 				SHM_DM_state[0].md[0].cnt0 ++;					// increment counter!
 				SHM_DM_state[0].md[0].cnt1 ++;					// STATISTICS UPDATE SIGNAL
 
-				cout << string_format("count, time_interval, FPS >> %.3f %d %.3es %.3f\n",TP_iXon.display_image_interval_s, TP_iXon.display_image_count,TP_iXon.time_diff_s,TP_iXon.FPS);
+				cout << string_format("count, time_interval, FPS >> %.3f %d %.3es %.3f %.6f\n",TP_iXon.display_image_interval_s, TP_iXon.display_image_count,TP_iXon.time_diff_s,TP_iXon.FPS, 1 / TP_iXon.FPS);
 
 				break;
 			}

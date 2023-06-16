@@ -218,6 +218,11 @@ class WFS():
             yy = np.append(yy, self.isz)
         self.SH_yy = yy
 
+
+        print('ny, yy, self.SH_yy >> ', ny, yy, self.SH_yy)
+
+
+
         # -------------------------------------------------------------
         # with these coordinates computed, we can now define the slices
         # of the image that will correspond to the different cells
@@ -293,6 +298,7 @@ class WFS():
                 x0, x1 = xx[ii], xx[ii+1]
                 self.SH_xref[jj,ii] = np.round(0.5 * (x1 - x0)) + 1
                 self.SH_yref[jj,ii] = np.round(0.5 * (y1 - y0)) + 1
+                # print("test sh_xref sh_yref", self.SH_xref, self.SH_yref)
 
         fits.writeto("SHrefx.fits", self.SH_xref, overwrite=True)
         fits.writeto("SHrefy.fits", self.SH_yref, overwrite=True)

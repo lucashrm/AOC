@@ -192,6 +192,7 @@ mcINT16 StartThread_Simu_iXon()
 
 	// SIGNALING EVENTS
 	TP_Simu_iXon.hLiveStreamDone = CreateEvent(NULL, FALSE, FALSE, NULL);
+	TP_Simu_iXon.hMissedFrame = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	// PARAMETERS
 	TP_Simu_iXon.bEndThread = false;
@@ -299,6 +300,7 @@ mcUINT32 Thread_Simu_iXon(void *pParam)
 	vEvent.push_back(param->hTerminateThread);
 	vEvent.push_back(param->hStartLiveStream);
 	vEvent.push_back(param->hStopLiveStream);
+	vEvent.push_back(param->hMissedFrame);
 
 	SetEvent(param->hThreadCreated);
 
@@ -315,6 +317,8 @@ mcUINT32 Thread_Simu_iXon(void *pParam)
 	//LARGE_INTEGER li_now;
 	double pc_freq = 0.;
 	double pc_start = 0.;
+
+	TP_Simu_iXon.isMissed = false;
 
 	QueryPerformanceFrequency(&li_freq);
 
@@ -346,18 +350,29 @@ mcUINT32 Thread_Simu_iXon(void *pParam)
 			SetEvent(param->hLiveStreamDone);
 			break;
 		}
+		case WAIT_OBJECT_0 + 3:
+		{
+			TP_Simu_iXon.isMissed = true;
+			// cout << "is missed in simu" << endl;
+		}
 		case WAIT_TIMEOUT:
 		{
-			QueryPerformanceCounter(&li_t1);
-			dt = double((li_t1.QuadPart - li_t0.QuadPart)) * tick_period_microsecond;
-			while (dt <= TP_iXon.expTime_s * 1000000) {
+			if (!TP_Simu_iXon.isMissed) {
 				QueryPerformanceCounter(&li_t1);
 				dt = double((li_t1.QuadPart - li_t0.QuadPart)) * tick_period_microsecond;
+				while (dt <= TP_iXon.expTime_s * 1000000) {
+					QueryPerformanceCounter(&li_t1);
+					dt = double((li_t1.QuadPart - li_t0.QuadPart)) * tick_period_microsecond;
+				}
+				dt = 0;
+				li_t0 = li_t1;
+				Simulation(param);
+				SetEvent(TP_iXon.hGetLastImage);
 			}
-			dt = 0;
-			li_t0 = li_t1;
-			Simulation(param);
-			SetEvent(TP_iXon.hGetLastImage);
+			else {
+				cout << "is missed in simu" << endl;
+			}
+			TP_Simu_iXon.isMissed = false;
 			break;
 		}
 		}
@@ -619,8 +634,9 @@ void* AcquireLoop(ThreadParams_iXon *param)
 			delta = last_im - last_read_im;
 			if (delta > 1)
 			{
-				//printf("delta image: %d %d %d %d\n",last_im - last_read_im, last_im, last_read_im,error);
+				//cout << "delta image : " << last_im - last_read_im << last_im << last_read_im << endl;
 				SetEvent(param->hExt_MissedFrame);
+				SetEvent(TP_Simu_iXon.hMissedFrame);
 			}
 			last_read_im = last_im;
 		
@@ -638,8 +654,8 @@ void* AcquireLoop(ThreadParams_iXon *param)
 				std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),param->vImgBufferCopy.begin());
 
 				// SHARED MEMORY DISPLAY IMAGE BUFFER
-				SHM_imarray[0].md[0].write = 1;				// signal you are about to write
-				std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),(long*)SHM_imarray[0].array.SI32);
+				//SHM_imarray[0].md[0].write = 1;				// signal you are about to write
+				//std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(),(long*)SHM_imarray[0].array.SI32);
 
 				retVal = AOC_ProcessSHData(param);
 				QueryPerformanceCounter(&li_t2);
@@ -679,13 +695,15 @@ void* AcquireLoop(ThreadParams_iXon *param)
 			//if (count % TP_iXon.FPSinterval == 0)
 			//if ((double(li_t2.QuadPart - li_prev.QuadPart) * iFreq) >= param->display_image_interval_s)
 
-			cout << "ixon simu: " << localCount << endl;
+			// cout << "ixon simu: " << localCount << endl;
 
 			if (localCount >= param->display_image_count)
 			{
 				li_prev = li_t2;
 				param->FPS = double(full_count) / (double(li_t2.QuadPart - li_t0.QuadPart) * iFreq);
-		
+				SHM_imarray[0].md[0].write = 1;				// signal you are about to write
+				std::copy(param->vImgBuffer.begin(), param->vImgBuffer.end(), (long*)SHM_imarray[0].array.SI32);
+
 				param->frame_count = unsigned int(full_count);
 				param->time_diff_s = time_diff * iFreq/local_count;
 				SetEvent(param->hExt_StatsUpdate);
