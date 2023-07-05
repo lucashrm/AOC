@@ -10,8 +10,8 @@ Author: Frantz Martinache (frantz.martinache@oca.eu)
 from pkgutil import get_data
 from xaosim.QtMain import QtMain, QApplication
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
-from PyQt5.QtCore import QThread, Qt
-from PyQt5.QtWidgets import QLabel, QFileDialog, QWidget, QVBoxLayout
+from PyQt5.QtCore import QThread, Qt, QDir
+from PyQt5.QtWidgets import QLabel, QFileDialog, QWidget, QVBoxLayout, QInputDialog, QLineEdit
 from PyQt5.QtGui import QImage, QPainter, QPen, QBrush, QGuiApplication
 
 import ctypes
@@ -109,6 +109,8 @@ def main(argv):
         ncpu = args.ncpu
         print("\nRUNNING THE WFS USING %d CPUs!\n" % (ncpu,))
 
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_EnableHighDpiScaling, False)  # enable highdpi scaling
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, False)  # use highdpi icons
     myqt = QtMain()
     gui = MyWindow(simu=args.simu, ncpu=ncpu)
     myqt.mainloop()
@@ -642,7 +644,6 @@ class MyWindow(QtWidgets.QMainWindow):
         retval = self.lib_EventManager.register_named_event(('_AOC_OK').encode('utf-8'),1)
         retval = self.lib_EventManager.register_named_event(('_AOC_CALIB_DONE').encode('utf-8'),1)
 
-
         super(MyWindow, self).__init__()
         if not os.path.exists(conf_dir + guidef):
             uic.loadUi(guidef, self)
@@ -820,6 +821,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.chB_Simulation.stateChanged[int].connect(self.set_simulation)
         self.pB_selectDirectory.clicked.connect(self.select_directory)
 
+        self.pB_changePrefix.clicked.connect(self.change_prefix)
 
         self.chB_TCSOffload.stateChanged[int].connect(self.TCSOffload)
         self.check_InvertX.stateChanged[int].connect(self.OffloadInvertX)
@@ -897,6 +899,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.pB_zer_reset.clicked.connect(self.zer_reset_correc)
         self.dspB_zer_gain.valueChanged[float].connect(self.zer_update_gain)
         self.chB_zer_cloop.stateChanged[int].connect(self.zer_cloop)
+        self.log_dir = ""
 
         # ====================================================
         # live tip-tilt offsets
@@ -918,6 +921,8 @@ class MyWindow(QtWidgets.QMainWindow):
         if list_params[3] == "1" and list_params[4] == "1":
             print("Simulation mode")
             isSim = True
+            self.chB_Simulation.setChecked(True)
+
 
         if isSim is False:
             print('Starting telescope offload thread.')
@@ -1255,6 +1260,20 @@ class MyWindow(QtWidgets.QMainWindow):
             self.mycam.send_fifo_cmd(b'system log INIT')
             time.sleep(1.)
             self.mycam.send_fifo_cmd(b'system log ON')
+            if self.log_dir == "":
+                os.write(self.mycam.cmd_fifo, b'system query_log_dir')
+                os.fsync(self.mycam.cmd_fifo)
+                tmp = os.read(self.mycam.cmd_fifo, self.mycam.MAX_FIFO_LEN)
+                os.fsync(self.mycam.cmd_fifo)
+                print(tmp)
+                self.log_dir = str(tmp) + 'calib\\'
+                self.log_dir = self.log_dir.replace("b'", "")
+                self.log_dir = self.log_dir.replace("'", "")
+                fits.writeto(self.log_dir + 'ixon_subaperture_thresholds.fits', self.vSubApThresh, overwrite=True)
+                fits.writeto(self.log_dir + 'ixon_subaperture_enabled.fits', self.vSubApEnable, overwrite=True)
+                fits.writeto(self.log_dir + 'ActuatorsMappingIndices.fits', self.vSubApEnable, overwrite=True)
+                shutil.copy('R:\\default_ref_pos_x.fits', self.log_dir)
+                shutil.copy('R:\\default_ref_pos_y.fits', self.log_dir)
         else:
             self.log("Slope+Illum (TT) data logging to file disabled", "red")
             self.mycam.send_fifo_cmd(b'system log OFF')
@@ -1280,6 +1299,16 @@ class MyWindow(QtWidgets.QMainWindow):
             b.extend(map(ord, path))
             self.mycam.send_fifo_cmd(b'system change_directory %b' % b)
 
+    def change_prefix(self):
+        text, ok = QInputDialog().getText(self, "QInputDialog().getText()",
+                                          "Object Name:", QLineEdit.Normal,
+                                          "obs")
+        if ok and text:
+            print(text)
+            b = bytearray()
+            b.extend(map(ord, text))
+            self.mycam.send_fifo_cmd(b'system change_prefix %b' % b)
+
     def stop_simulation(self):
         self.mycam.send_fifo_cmd(b'system simulation OFF')
         print("system simulation off")
@@ -1292,6 +1321,18 @@ class MyWindow(QtWidgets.QMainWindow):
 
         if self.ZER_WFC.bLogCmds == True:
             self.log("Modes (ZER) data logging to file enabled", "green")
+            self.mycam.send_fifo_cmd(b'system log ON')
+            if self.log_dir == "":
+                os.write(self.mycam.cmd_fifo, b'system query_log_dir')
+                os.fsync(self.mycam.cmd_fifo)
+                tmp = os.read(self.mycam.cmd_fifo, self.mycam.MAX_FIFO_LEN)
+                os.fsync(self.mycam.cmd_fifo)
+                print(tmp)
+                self.log_dir = str(tmp) + 'calib\\'
+                self.log_dir = self.log_dir.replace("b'", "")
+                self.log_dir = self.log_dir.replace("'", "")
+                shutil.copy('R:\\default_ref_pos_x.fits', self.log_dir)
+                shutil.copy('R:\\default_ref_pos_y.fits', self.log_dir)
         else:
             self.log("Modes (ZER) data logging to file disabled", "red")
 
@@ -1497,7 +1538,8 @@ class MyWindow(QtWidgets.QMainWindow):
 
         self.shm_refcent.set_data(self.ref_centroids)
         self.shm_refcent.save_as_fits('R:\\ref_cent_last.fits')
-
+        if self.log_dir != "":
+            shutil.copy('R:\\ref_cent_last.fits', self.log_dir)
         self.lib_EventManager.trigger_named_event(('_AOC_REF_CENTROIDS_SET').encode('utf-8'))
 
         self.log("Current pos. set as reference", "blue")
@@ -1896,7 +1938,7 @@ class MyWindow(QtWidgets.QMainWindow):
             self.yB[k] = kw_HO
 
         timestamps = (np.asarray(self.shm_timestamps.get_data(check=False, reform=True, sleepT=0.)))[0:50,:]
-        print((timestamps[0][100] - timestamps[0][99]) / 10000000)
+        #print((timestamps[0][100] - timestamps[0][99]) / 10000000)
         self.refresh_stats()
 
 
@@ -2282,6 +2324,26 @@ class MyWindow(QtWidgets.QMainWindow):
             self.log("[zer_calib] TIMEOUT while waiting for '_AOC_OK' event. Calibration aborted.", "red")
         else:
             self.mycam.send_fifo_cmd(b"system calib_zer")
+            os.write(self.mycam.cmd_fifo, b'system query_log_dir')
+            os.fsync(self.mycam.cmd_fifo)
+            tmp = os.read(self.mycam.cmd_fifo, self.mycam.MAX_FIFO_LEN)
+            os.fsync(self.mycam.cmd_fifo)
+            print(tmp)
+            calFileCpy = str(tmp) + 'calib\\' + 'ZER_CAL.fits'
+            calFileCpy = calFileCpy.replace("b'", "")
+            calFileCpy = calFileCpy.replace("'", "")
+            self.log_dir = str(tmp) + 'calib\\'
+            self.log_dir = self.log_dir.replace("b'", "")
+            self.log_dir = self.log_dir.replace("'", "")
+            fits.writeto(calFileCpy, DMact_modes.reshape((nmodes, nbAct)), overwrite=True)
+            fits.setval(calFileCpy, 'NMODES', value=nmodes)
+            fits.setval(calFileCpy, 'NCALFRM', value=nCalFrames)
+            fits.writeto(self.log_dir + 'ixon_subaperture_thresholds.fits', self.vSubApThresh, overwrite=True)
+            fits.writeto(self.log_dir + 'ixon_subaperture_enabled.fits', self.vSubApEnable, overwrite=True)
+            fits.writeto(self.log_dir + 'ActuatorsMappingIndices.fits', self.vSubApEnable, overwrite=True)
+            shutil.copy('R:\\default_ref_pos_x.fits', self.log_dir)
+            shutil.copy('R:\\default_ref_pos_y.fits', self.log_dir)
+
 
     def process_calibration(self, calib_mode):
         if calib_mode == 'ZER':
@@ -2305,6 +2367,14 @@ class MyWindow(QtWidgets.QMainWindow):
         # SANITY CHECK
         fits.writeto(r'R:\RRinvRRT.fits',np.dot(self.RRinv,self.RR.T),overwrite=True)
         fits.writeto(r'R:\RRsvdRRT.fits',np.dot(self.RRsvd,self.RR.T),overwrite=True)
+
+        # COPY IN LOG FILES
+        fits.writeto(self.log_dir + 'RRinv.fits', self.RRinv, overwrite=True)
+        fits.writeto(self.log_dir + 'RRsvd.fits', self.RRsvd, overwrite=True)
+
+        # SANITY CHECK
+        fits.writeto(self.log_dir + 'RRinvRRT.fits', np.dot(self.RRinv, self.RR.T), overwrite=True)
+        fits.writeto(self.log_dir + 'RRsvdRRT.fits', np.dot(self.RRsvd, self.RR.T), overwrite=True)
 
         self.bDoMeasure = True
 

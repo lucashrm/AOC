@@ -114,6 +114,7 @@ typedef struct
 	// TEST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	vector<vector<float>>	vCircBuf_FlatSHData;
 	vector<vector<double>>	vCircBuf_Timestamps;
+	vector<vector<float>>	vCircBuf_DM_cmd;
 	size_t					nCircBuffers;
 	size_t					circBufCounter;
 
@@ -161,7 +162,10 @@ typedef struct
 	vector<DWORD>			vThread_CalcSHDataID;
 
 	// TIMESTAMPS
-	vector<double> timestamp;
+	vector<double>			timestamp;
+
+	//LOG DIR INFO
+	bool					isCal;
 
 } ThreadParams_calcSH;
 

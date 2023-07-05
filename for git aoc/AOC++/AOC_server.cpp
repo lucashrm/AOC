@@ -16,6 +16,8 @@
 #include <fcntl.h>
 #include <fitsio.h>
 
+#include <direct.h>
+
 //#undef _TIMESPEC_DEFINED
 #include <pthread.h>
 
@@ -724,8 +726,10 @@ void main_loop()
 
 									vector<float> vtmp(TP_calcSH.display_image_count*TP_calcSH.nx*TP_calcSH.ny*TP_calcSH.nDataSets, 0.f);
 									vector<double> vtimestamptmp(TP_calcSH.display_image_count * 50, 0);
+									vector<float> vdmtmp(TP_calcSH.display_image_count * 97, 0);
 									TP_calcSH.vCircBuf_FlatSHData.resize(TP_calcSH.nCircBuffers, vtmp);
 									TP_calcSH.vCircBuf_Timestamps.resize(TP_calcSH.nCircBuffers, vtimestamptmp);
+									TP_calcSH.vCircBuf_DM_cmd.resize(TP_calcSH.nCircBuffers, vdmtmp);
 
 									TP_calcSH.circBufCounter = 0;
 									TP_calcSH.local_counter = 0;
@@ -1400,6 +1404,19 @@ void main_loop()
 								if (vItem[2].compare("ON") == 0)
 								{
 									SetEvent(TP_DataLogger.hStartLog);
+									if (!TP_calcSH.isCal) {
+										std::string timeDir;
+										SYSTEMTIME myST;
+										GetSystemTime(&myST);
+										timeDir = string_format("%04d.%02d.%02dT%02dh%02dm%02d.%03ds", myST.wYear, myST.wMonth, myST.wDay,
+											myST.wHour, myST.wMinute, myST.wSecond, myST.wMilliseconds);
+									
+										std::string strDirName = string_format("%s_%s_%s", TP_DataSaver.strPrefix.data(), timeDir.data(), "_NONE");
+										TP_DataSaver.strLogDir = "C:\\Users\\lucas\\Documents\\STAGE\\Misc\\log\\" + strDirName + "\\";
+										std::string strLogDirCalib = TP_DataSaver.strLogDir + "calib\\";
+										_mkdir(TP_DataSaver.strLogDir.c_str());
+										_mkdir(strLogDirCalib.c_str());
+									}
 								}
 								else if (vItem[2].compare("OFF") == 0)
 								{
@@ -1498,6 +1515,17 @@ void main_loop()
 									SetEvent(TP_Simu_iXon.hStartLiveStream);
 								}
 							}
+							else if (compare_no_case(cmdStr, "change_prefix") == 0)
+							{
+								if (vItem.size() != 3)
+								{
+									cout << string_format("Incorrect number of parameters (1 required). Nothing done.\n");
+									break;
+								}
+								else {
+									TP_DataSaver.strPrefix = vItem[2];
+								}
+							}	
 							else if (compare_no_case(cmdStr, "set_ZER_gain") == 0)
 							{
 								if (vItem.size() != 3)
@@ -1544,6 +1572,19 @@ void main_loop()
 							else if (compare_no_case(cmdStr,"calib_zer") == 0)
 							{
 								cout << string_format("System command '%s' issued.\n", cmdStr.data());
+
+								SYSTEMTIME myST;
+								GetSystemTime(&myST);
+								std::string timeDir = string_format("%04d.%02d.%02dT%02dh%02dm%02d.%03ds", myST.wYear, myST.wMonth, myST.wDay,
+									myST.wHour, myST.wMinute, myST.wSecond, myST.wMilliseconds);
+
+
+								std::string strDirName = string_format("%s_%s_%s", TP_DataSaver.strPrefix.data(), timeDir.data(), "_ZER");
+								TP_DataSaver.strLogDir = "C:\\Users\\lucas\\Documents\\STAGE\\Misc\\log\\" + strDirName + "\\";
+								std::string strLogDirCalib = TP_DataSaver.strLogDir + "calib\\";
+								_mkdir(TP_DataSaver.strLogDir.c_str());
+								_mkdir(strLogDirCalib.c_str());
+
 
 								if (TP_iXon.bAcqON)
 								{
@@ -1629,8 +1670,12 @@ void main_loop()
 										TP_calcSH.vDM_Modes_ZER_iNorm[i] = 1./TP_calcSH.vDM_Modes_ZER_iNorm[i];
 									}
 
+									TP_calcSH.isCal = true;
+
 									FITS.Save(TP_calcSH.vDM_Modes_ZER_Slope,TP_calcSH.nx*TP_calcSH.nx*2,TP_calcSH.nModes_ZER,"R:\\","ZER_RecModes");
 									FITS.Save(TP_calcSH.vDM_Modes_ZER_iNorm,TP_calcSH.nModes_ZER,1,"R:\\","ZER_iNormalizations");
+									FITS.Save(TP_calcSH.vDM_Modes_ZER_Slope, TP_calcSH.nx * TP_calcSH.nx * 2, TP_calcSH.nModes_ZER, strLogDirCalib, "ZER_RecModes");
+									FITS.Save(TP_calcSH.vDM_Modes_ZER_iNorm, TP_calcSH.nModes_ZER, 1, strLogDirCalib, "ZER_iNormalizations");
 
 									TP_calcSH.bCalMode = false;
 									TP_iXon.bCalibration = false;
@@ -1645,6 +1690,19 @@ void main_loop()
 								}
 
 								break;
+							}
+							else if (compare_no_case(cmdStr, "query_log_dir") == 0)
+							{
+								std::sprintf(msgout, "%s", TP_DataSaver.strLogDir.c_str());
+								if (WriteFile(hPipeIn,
+									msgout,
+									std::strlen(msgout),   // = length of string + terminating '\0' !!!
+									&dwWritten,
+									NULL) == FALSE)
+								{
+									cout << string_format("ERROR: WriteFile(hPipeIn) failed!\n");
+								}
+								FlushFileBuffers(hPipeIn);
 							}
 							else if (compare_no_case(cmdStr, "set_leakage_gain") == 0)
 							{
@@ -1670,6 +1728,19 @@ void main_loop()
 							{
 								if (TP_calcSH.bCalDataAvailable_ZON == true)
 								{
+									SYSTEMTIME myST;
+									GetSystemTime(&myST);
+									std::string timeDir = string_format("%04d.%02d.%02dT%02dh%02dm%02d.%03ds", myST.wYear, myST.wMonth, myST.wDay,
+										myST.wHour, myST.wMinute, myST.wSecond, myST.wMilliseconds);
+
+
+									std::string strDirName = string_format("%s_%s_%s", TP_DataSaver.strPrefix.data(), timeDir.data(), "_ZON");
+									TP_DataSaver.strLogDir = "C:\\Users\\lucas\\Documents\\STAGE\\Misc\\log\\" + strDirName + "\\";
+									std::string strLogDirCalib = TP_DataSaver.strLogDir + "calib\\";
+									_mkdir(TP_DataSaver.strLogDir.c_str());
+									_mkdir(strLogDirCalib.c_str());
+
+
 									TP_calcSH.projMode = TP_calcSH.AOC_PROJ_MODE_ZON;
 									TP_calcSH.bCalMode = true;
 
@@ -2078,9 +2149,11 @@ int main(int argc, char *argv[])
 
 	vector<float> vtmp(TP_iXon.display_image_count*TP_calcSH.nx*TP_calcSH.ny*TP_calcSH.nDataSets, 0.f);
 	vector<double> vtimestamptmp(TP_iXon.display_image_count * 50, 0);
+	vector<float> vdmtmp(TP_iXon.display_image_count * 97, 0);
 	TP_calcSH.nCircBuffers = 2;
 	TP_calcSH.vCircBuf_FlatSHData.resize(TP_calcSH.nCircBuffers, vtmp);
 	TP_calcSH.vCircBuf_Timestamps.resize(TP_calcSH.nCircBuffers, vtimestamptmp);
+	TP_calcSH.vCircBuf_DM_cmd.resize(TP_calcSH.nCircBuffers, vdmtmp);
 	TP_calcSH.circBufCounter = 0;
 
 	// 

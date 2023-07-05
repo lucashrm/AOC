@@ -9,6 +9,8 @@
 #include "ImageStruct.h"
 #include "thread_CalcSH_params.h"
 #include "thread_DataLogger_params.h"
+#include <direct.h>
+
 
 using namespace std;
 using namespace MultiCODE;
@@ -128,6 +130,7 @@ static DWORD Thread_DataLogger(void* pParam)
 			vector<float> vTmp(param->dataLineSize*param->dataBlockSize*param->nBlocksToLog);
 			vector<double> vTmpL(param->dataLineSize * param->dataBlockSize * param->nBlocksToLog);
 			param->vLogBufferDataSH.resize(param->nCircBuf, vTmp);
+			param->vLogBufferDMcmd.resize(param->nCircBuf, vTmp);
 			param->vLogBufferTimestamps.resize(param->nCircBuf, vTmpL);
 
 			TP_DataLogger.LoggerCounter = 0;
@@ -152,6 +155,8 @@ static DWORD Thread_DataLogger(void* pParam)
 				case WAIT_OBJECT_0+1:
 					std::copy(TP_calcSH.vCircBuf_FlatSHData[param->circBufferCalcSHCounter].begin(), TP_calcSH.vCircBuf_FlatSHData[param->circBufferCalcSHCounter].end(),
 						&param->vLogBufferDataSH[param->circBufferLoggerCounter][blockCounter*blockSize]);
+					std::copy(TP_calcSH.vCircBuf_DM_cmd[param->circBufferCalcSHCounter].begin(), TP_calcSH.vCircBuf_DM_cmd[param->circBufferCalcSHCounter].end(),
+						&param->vLogBufferDMcmd[param->circBufferLoggerCounter][blockCounter * blockSize]);
 					std::copy(TP_calcSH.vCircBuf_Timestamps[param->circBufferCalcSHCounter].begin(), TP_calcSH.vCircBuf_Timestamps[param->circBufferCalcSHCounter].end(),
 						&param->vLogBufferTimestamps[param->circBufferLoggerCounter][blockCounter * blockSize]);
 					break;
@@ -337,10 +342,20 @@ static DWORD Thread_DataSaver(void* pParam)
 			SYSTEMTIME myST;
 			GetSystemTime(&myST);
 			SetTimeString(myST, param->strLogDate);
-			param->strFilename = string_format("%s_%s_%04d", param->strLogDate.data(), param->strLogBasename.data(), 
+			
+			/*if (!TP_calcSH.bCalMode) {
+				std::string strDirName = string_format("%s_%s_%s", "prefix_", param->strLogDate.data(), "_NONE");
+				param->strLogDir = "C:\\Users\\lucas\\Documents\\STAGE\\Misc\\log\\";
+				_mkdir(param->strLogDir.c_str());
+			}*/
+
+			param->strFilename = string_format("%s_%s_%04d", param->strLogDate.data(), param->strLogBasename.data(),
 				param->TP_DataLogger->LoggerCounter);
 
 			std::string strFilenameT = string_format("%s_%s_%04d", param->strLogDate.data(), "_timestamp",
+				param->TP_DataLogger->LoggerCounter);
+
+			std::string strFilenameDM = string_format("%s_%s_%04d", param->strLogDate.data(), "_dm_cmd",
 				param->TP_DataLogger->LoggerCounter);
 
 			cout << string_format("DataSaver saved file '%s' to folder '%s'.\n", param->strFilename.data(), param->strLogDir.data());
@@ -350,6 +365,8 @@ static DWORD Thread_DataSaver(void* pParam)
 
 			if (param->FITS.Save(&TPDL.vLogBufferDataSH[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize*TPDL.nBlocksToLog, param->strLogDir, param->strFilename) != 0)
 				cout << "Couldn't log data sh" << endl;
+			if (param->FITS.Save(&TPDL.vLogBufferDMcmd[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize * TPDL.nBlocksToLog, param->strLogDir, strFilenameDM) != 0)
+				cout << "Couldn't log dm cmd" << endl;
 			if (param->FITS.Save(&TPDL.vLogBufferTimestamps[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize * TPDL.nBlocksToLog, param->strLogDir, strFilenameT) != 0)
 				cout << "Couldn't log timestamps" << endl;
 			
@@ -383,7 +400,20 @@ mcINT16 StartThread_DataSaver()
 	TP_DataSaver.hTerminateThread = CreateEvent(NULL, FALSE, FALSE, NULL);
 	TP_DataSaver.hSaveData = CreateEvent(NULL, FALSE, FALSE, NULL);
 
+	TP_DataSaver.strPrefix = "obs";
+
 	TP_DataSaver.TP_DataLogger = &TP_DataLogger;
+
+	/*std::string timeDir;
+	SYSTEMTIME myST;
+	GetSystemTime(&myST);
+	SetTimeString(myST, timeDir);
+
+	if (!TP_calcSH.bCalMode) {
+		std::string strDirName = string_format("%s_%s_%s", "prefix_", timeDir.data(), "_NONE");
+		TP_DataSaver.strLogDir = "C:\\Users\\lucas\\Documents\\STAGE\\Misc\\log\\" + strDirName + "\\";
+		_mkdir(TP_DataSaver.strLogDir.c_str());
+	}*/
 
 	hThread_DataSaver = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Thread_DataSaver, &TP_DataSaver, THREAD_PRIORITY_NORMAL, &Thread_DataSaver_ID);
 

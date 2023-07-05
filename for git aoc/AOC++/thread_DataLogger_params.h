@@ -27,6 +27,7 @@ typedef struct
 	size_t			dataBlockSize;
 	size_t			dataLineSize;
 	vector<vector<float>>	vLogBufferDataSH;
+	vector<vector<float>>	vLogBufferDMcmd;
 	vector<vector<double>>	vLogBufferTimestamps;
 
 	size_t			LoggerCounter;
@@ -52,6 +53,7 @@ typedef struct _ThreadParams_DataSaver
 	string			strLogBasename;
 	string			strLogDate;
 	string			strFilename;
+	string			strPrefix;
 
 	MCODE_Export_FITS FITS;
 
