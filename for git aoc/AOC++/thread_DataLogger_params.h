@@ -26,6 +26,8 @@ typedef struct
 	size_t			nBlocksToLog;
 	size_t			dataBlockSize;
 	size_t			dataLineSize;
+	size_t			dataLineSizeT;
+	size_t			dataLineSizeCmd;
 	vector<vector<float>>	vLogBufferDataSH;
 	vector<vector<float>>	vLogBufferDMcmd;
 	vector<vector<double>>	vLogBufferTimestamps;

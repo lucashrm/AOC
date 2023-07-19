@@ -11,8 +11,9 @@ from pkgutil import get_data
 from xaosim.QtMain import QtMain, QApplication
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import QThread, Qt, QDir
-from PyQt5.QtWidgets import QLabel, QFileDialog, QWidget, QVBoxLayout, QInputDialog, QLineEdit
+from PyQt5.QtWidgets import QLabel, QFileDialog, QWidget, QVBoxLayout, QInputDialog, QLineEdit, QGraphicsWidget
 from PyQt5.QtGui import QImage, QPainter, QPen, QBrush, QGuiApplication
+from PyQt5.QtChart import QChart, QChartView, QBarSet, QBarCategoryAxis, QBarSeries, QValueAxis
 
 import ctypes
 import _ctypes
@@ -180,6 +181,17 @@ class GenericThread(QtCore.QThread):
     def run(self):
         self.function(*self.args,**self.kwargs)
         return
+
+# =====================================================================
+#                     Chart Window
+# =====================================================================
+class ChartWindow(QWidget):
+    def __init__(self):
+        super(ChartWindow, self).__init__()
+        uic.loadUi("chart_ui2.ui", self)
+
+        self.parentWindow = None
+
 
 
 
@@ -902,6 +914,59 @@ class MyWindow(QtWidgets.QMainWindow):
         self.log_dir = ""
 
         # ====================================================
+        # chart
+        # ====================================================
+
+        self.new_qc = QChart()
+        self.new_qcv = QChartView(self.new_qc)
+        self.new_qbs = QBarSeries()
+        self.bar_set = QBarSet("p_value")
+        self.new_qc.setMargins(QtCore.QMargins(-5,-5,-5,-10))
+        self.new_qc.setContentsMargins(QtCore.QMarginsF(0, 0, 0, 0))
+        self.new_qc.setBackgroundRoundness(0)
+        self.new_qc.legend().hide()
+        self.histo = []
+        for i in range(1, 164):
+            self.histo.append(i)
+            self.bar_set.append(self.histo[i - 1])
+        self.new_qbs.append(self.bar_set)
+        self.new_qbs.setBarWidth(1)
+        self.new_qc.addSeries(self.new_qbs)
+        self.axis = QValueAxis()
+        self.axis.setTickCount(10)
+        self.axis.setLabelFormat("%d")
+        self.new_qc.createDefaultAxes()
+        self.new_qc.setAxisX(self.axis, self.new_qbs)
+        self.axisY = QValueAxis()
+        self.axisY.setRange(0, 2500)
+        self.new_qc.setAxisY(self.axisY, self.new_qbs)
+        self.vL_Chart.addWidget(self.new_qcv)
+
+        self.qc = QChart()
+        self.qcv = QChartView(self.qc)
+        self.qbs = QBarSeries()
+        self.set0 = QBarSet("Value")
+        self.set0 << 0 << 100 << 200 << 300 << 400 << 500 << 600 << 700 << 800 << 900
+        self.qbs.append(self.set0)
+        self.qbs.setBarWidth(1)
+        #self.qbs.setBarSpacing(0)
+        self.qc.addSeries(self.qbs)
+        #self.vL_chart.addWidget(self.qcv)
+
+        self.axis = QValueAxis()
+        self.axis.setTickCount(10)
+        self.axis.setLabelFormat("%d")
+        self.qc.createDefaultAxes()
+        self.qc.setAxisX(self.axis, self.qbs)
+        self.axisY = QValueAxis()
+        self.axisY.setRange(0, 2500)
+        self.qc.setAxisY(self.axisY, self.qbs)
+        #self.vL_chart.setStyleSheet('background-color:grey')
+
+        self.chart_win = None
+        self.chB_showChart.stateChanged[int].connect(self.show_chart)
+
+        # ====================================================
         # live tip-tilt offsets
         # ====================================================
         self.pB_tt_dx_p.clicked.connect(self.ttx_offset_p)
@@ -1050,6 +1115,19 @@ class MyWindow(QtWidgets.QMainWindow):
 
         # print('Message received >> ' + msg.topic + ' ' + str(msg.payload), str(self.derotator_angle_deg))
         # print('Angle sent to tel >> ' ,str(self.tel.offset_angle_deg))
+
+    def show_chart(self):
+        if self.chart_win == None:
+            self.chart_win = ChartWindow()
+
+            self.chart_win.vl_Chart.addWidget(self.qcv)
+        if self.chB_showChart.isChecked() == True:
+            self.chart_win.show()
+            self.chart_win.parentWindow = self
+
+        else:
+            self.chart_win.hide()
+
 
     def show_pupil(self, checked):
         # print('"show_pupil" function unimplemented')
@@ -1669,8 +1747,18 @@ class MyWindow(QtWidgets.QMainWindow):
         msg = "<pre>\n"
         msg += "exp.time = %7.3f ms\n" % (self.mycam.cam_tint * 1e3)
 
+        print(self.data_cam.size)
+        for i in range(128):
+            res = np.sum(self.data_cam[i])
+            #print(res)
+
         for i, ptile in enumerate(pt_levels):
+            # self.set0 << pt_values[i] << pt_values[i] << pt_values[i] << pt_values[i] << pt_values[i]\
+            #     << pt_values[i] << pt_values[i] << pt_values[i] \
+            #     << pt_values[i] << pt_values[i]
+            self.set0.replace(i, pt_values[i])
             msg += "p-tile %3d = %8.2f\n" % (ptile, pt_values[i])
+
         msg += "\ntt_xy = (%+.2f,%+.2f)\n" % (self.wfs.ttx_mean, self.wfs.tty_mean)
         msg += "</pre>"
         self.lbl_stats.setText(msg)

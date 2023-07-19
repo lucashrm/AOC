@@ -13,6 +13,7 @@ Revised in october 2017: after SHM system upgrade
 Author: Frantz Martinache (frantz.martinache@oca.eu)
 
 -------------------------------------------------------------------------- '''
+import PyQt5.QtChart
 
 from QtMain import QtMain, QApplication
 #from PyQt4 import QtCore, QtGui, uic
@@ -379,6 +380,7 @@ class MyWindow(QtGui.QMainWindow):
         self.pB_mm_abort.clicked.connect(self.zo_abort_now)
         self.pB_mm_cloop.clicked.connect(self.zo_cloop_call)
         self.pB_mm_reset.clicked.connect(self.zz_reset) # yep: zz_reset!
+
 
         # ==============================================
         #             top-menu actions

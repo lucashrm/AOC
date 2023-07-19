@@ -127,11 +127,14 @@ static DWORD Thread_DataLogger(void* pParam)
 		{
 			size_t logSize = param->dataLineSize*param->dataBlockSize*param->nBlocksToLog;
 			size_t blockSize = param->dataLineSize*param->dataBlockSize;
+			size_t blockSizeDM = param->dataLineSizeCmd * param->dataBlockSize;
+			size_t blockSizeT = param->dataLineSizeT * param->dataBlockSize;
 			vector<float> vTmp(param->dataLineSize*param->dataBlockSize*param->nBlocksToLog);
-			vector<double> vTmpL(param->dataLineSize * param->dataBlockSize * param->nBlocksToLog);
+			vector<float> vTmpDM(param->dataLineSizeCmd * param->dataBlockSize * param->nBlocksToLog);
+			vector<double> vTmpD(param->dataLineSizeT * param->dataBlockSize * param->nBlocksToLog);
 			param->vLogBufferDataSH.resize(param->nCircBuf, vTmp);
-			param->vLogBufferDMcmd.resize(param->nCircBuf, vTmp);
-			param->vLogBufferTimestamps.resize(param->nCircBuf, vTmpL);
+			param->vLogBufferDMcmd.resize(param->nCircBuf, vTmpDM);
+			param->vLogBufferTimestamps.resize(param->nCircBuf, vTmpD);
 
 			TP_DataLogger.LoggerCounter = 0;
 			size_t blockCounter = 0;
@@ -156,9 +159,9 @@ static DWORD Thread_DataLogger(void* pParam)
 					std::copy(TP_calcSH.vCircBuf_FlatSHData[param->circBufferCalcSHCounter].begin(), TP_calcSH.vCircBuf_FlatSHData[param->circBufferCalcSHCounter].end(),
 						&param->vLogBufferDataSH[param->circBufferLoggerCounter][blockCounter*blockSize]);
 					std::copy(TP_calcSH.vCircBuf_DM_cmd[param->circBufferCalcSHCounter].begin(), TP_calcSH.vCircBuf_DM_cmd[param->circBufferCalcSHCounter].end(),
-						&param->vLogBufferDMcmd[param->circBufferLoggerCounter][blockCounter * blockSize]);
+						&param->vLogBufferDMcmd[param->circBufferLoggerCounter][blockCounter * blockSizeDM]);
 					std::copy(TP_calcSH.vCircBuf_Timestamps[param->circBufferCalcSHCounter].begin(), TP_calcSH.vCircBuf_Timestamps[param->circBufferCalcSHCounter].end(),
-						&param->vLogBufferTimestamps[param->circBufferLoggerCounter][blockCounter * blockSize]);
+						&param->vLogBufferTimestamps[param->circBufferLoggerCounter][blockCounter * blockSizeT]);
 					break;
 				}
 
@@ -211,6 +214,8 @@ mcINT16 StartThread_DataLogger()
 
 	TP_DataLogger.nCircBuf = 2;
 	TP_DataLogger.dataLineSize = 500;
+	TP_DataLogger.dataLineSizeT = 50;
+	TP_DataLogger.dataLineSizeCmd = 97;
 	TP_DataLogger.dataBlockSize = 50;
 	TP_DataLogger.nBlocksToLog = 1000;
 
@@ -365,9 +370,9 @@ static DWORD Thread_DataSaver(void* pParam)
 
 			if (param->FITS.Save(&TPDL.vLogBufferDataSH[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize*TPDL.nBlocksToLog, param->strLogDir, param->strFilename) != 0)
 				cout << "Couldn't log data sh" << endl;
-			if (param->FITS.Save(&TPDL.vLogBufferDMcmd[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize * TPDL.nBlocksToLog, param->strLogDir, strFilenameDM) != 0)
+			if (param->FITS.Save(&TPDL.vLogBufferDMcmd[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSizeCmd, TPDL.dataBlockSize * TPDL.nBlocksToLog, param->strLogDir, strFilenameDM) != 0)
 				cout << "Couldn't log dm cmd" << endl;
-			if (param->FITS.Save(&TPDL.vLogBufferTimestamps[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSize, TPDL.dataBlockSize * TPDL.nBlocksToLog, param->strLogDir, strFilenameT) != 0)
+			if (param->FITS.Save(&TPDL.vLogBufferTimestamps[TPDL.circBufferLoggerCounter][0], TPDL.dataLineSizeT, TPDL.dataBlockSize * TPDL.nBlocksToLog, param->strLogDir, strFilenameT) != 0)
 				cout << "Couldn't log timestamps" << endl;
 			
 			break;

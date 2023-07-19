@@ -665,7 +665,7 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 3)]	,&TP_calcSH.vSH_slope_y[0],sizeof(float)*nSubAp);
 		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 4)]	,&TP_calcSH.vSH_phot[0],sizeof(float)*nSubAp);
 		if (vDM_cur_cmd.size() != 0)
-			//std::memcpy(&TP_calcSH.vCircBuf_DM_cmd[bufNum][97 * mod_counter], &vDM_cur_cmd[0], sizeof(float) * 97);
+			std::memcpy(&TP_calcSH.vCircBuf_DM_cmd[bufNum][97 * mod_counter], &vDM_cur_cmd[0], sizeof(float) * 97);
 		std::memcpy(&TP_calcSH.vCircBuf_Timestamps[bufNum][50 * mod_counter], &TP_calcSH.timestamp[0], sizeof(double)*50);
 
 
