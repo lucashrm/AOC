@@ -552,6 +552,8 @@ void* AcquireLoop(ThreadParams_iXon *param)
 
 			++full_count;
 			++local_count;
+			localCount++;
+
 
 			// CHECK FOR LOOP TERMINATION
 			if ((full_count >= param->nCalFrames) || (WaitForSingleObject(param->hStopAcquisition,0) == WAIT_OBJECT_0))

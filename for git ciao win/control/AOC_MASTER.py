@@ -926,7 +926,7 @@ class MyWindow(QtWidgets.QMainWindow):
         self.new_qc.setBackgroundRoundness(0)
         self.new_qc.legend().hide()
         self.histo = []
-        for i in range(1, 164):
+        for i in range(1, 128):
             self.histo.append(i)
             self.bar_set.append(self.histo[i - 1])
         self.new_qbs.append(self.bar_set)
@@ -1748,9 +1748,8 @@ class MyWindow(QtWidgets.QMainWindow):
         msg += "exp.time = %7.3f ms\n" % (self.mycam.cam_tint * 1e3)
 
         print(self.data_cam.size)
-        for i in range(128):
-            res = np.sum(self.data_cam[i])
-            #print(res)
+        res = np.histogram(self.data_cam)
+        print(res)
 
         for i, ptile in enumerate(pt_levels):
             # self.set0 << pt_values[i] << pt_values[i] << pt_values[i] << pt_values[i] << pt_values[i]\

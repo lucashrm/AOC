@@ -659,18 +659,19 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 		//std::memcpy(&TP_calcSH.vFlatSHData[TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 4)]	,&TP_calcSH.vSH_phot[0],sizeof(float)*nSubAp);
 
 		size_t bufNum = TP_calcSH.circBufCounter % TP_calcSH.nCircBuffers;
-		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*mod_counter*TP_calcSH.nDataSets]		,&TP_calcSH.vSH_cent_x[0],sizeof(float)*nSubAp);
-		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 1)]	,&TP_calcSH.vSH_cent_y[0],sizeof(float)*nSubAp);
-		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 2)]	,&TP_calcSH.vSH_slope_x[0],sizeof(float)*nSubAp);
-		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 3)]	,&TP_calcSH.vSH_slope_y[0],sizeof(float)*nSubAp);
-		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 4)]	,&TP_calcSH.vSH_phot[0],sizeof(float)*nSubAp);
+		int single_data_size = TP_calcSH.nx * TP_calcSH.ny; // NOUVEAU
+		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*mod_counter*TP_calcSH.nDataSets]		,&TP_calcSH.vSH_cent_x[0],sizeof(float)* single_data_size);
+		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 1)]	,&TP_calcSH.vSH_cent_y[0],sizeof(float)* single_data_size);
+		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 2)]	,&TP_calcSH.vSH_slope_x[0],sizeof(float)* single_data_size);
+		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 3)]	,&TP_calcSH.vSH_slope_y[0],sizeof(float)* single_data_size);
+		std::memcpy(&TP_calcSH.vCircBuf_FlatSHData[bufNum][TP_calcSH.nx*TP_calcSH.ny*(mod_counter*TP_calcSH.nDataSets + 4)]	,&TP_calcSH.vSH_phot[0],sizeof(float)* single_data_size);
 		if (vDM_cur_cmd.size() != 0)
 			std::memcpy(&TP_calcSH.vCircBuf_DM_cmd[bufNum][97 * mod_counter], &vDM_cur_cmd[0], sizeof(float) * 97);
 		std::memcpy(&TP_calcSH.vCircBuf_Timestamps[bufNum][50 * mod_counter], &TP_calcSH.timestamp[0], sizeof(double)*50);
 
 
-		TP_DataLogger.circBufferCalcSHCounter = bufNum;
-		SetEvent(TP_DataLogger.hDataBlockAvailable);
+		//TP_DataLogger.circBufferCalcSHCounter = bufNum;   // A COMMENTER
+		//SetEvent(TP_DataLogger.hDataBlockAvailable);      //
 
 		//cout << TP_calcSH.local_counter % TP_calcSH.display_image_count << " " << mod_counter << endl;
 
@@ -719,7 +720,8 @@ int trigger_calc_SH_data_mt(long *vImg, float _bkg)
 		{
 			// WHEN THE NUMBER OF ACQUIRED DATA SETS EQUALS TP_calcSH.display_image_c	ount THEN TRANSFER THE DATA BLOCK TO THE SHARED MEMORY 
 			//std::copy(TP_calcSH.vFlatSHData.begin(),TP_calcSH.vFlatSHData.end(),(float*)SHM_Slopes[0].array.F);
-			
+			TP_DataLogger.circBufferCalcSHCounter = bufNum;     // EN PLUS
+			SetEvent(TP_DataLogger.hDataBlockAvailable);     
 			//timestamp.clear();
 			//std::copy(TP_calcSH.timestamp.begin(), TP_calcSH.timestamp.end(), (long long *)SHM_Timestamps[0].array.D);
 			std::copy(TP_calcSH.vCircBuf_Timestamps[bufNum].begin(), TP_calcSH.vCircBuf_Timestamps[bufNum].end(), SHM_Timestamps[0].array.D);
